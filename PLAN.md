@@ -295,6 +295,21 @@ grant execute on function public.start_session(text),
 > 인자나 반환 타입이 바뀌는 함수는 `create or replace` 로 못 고친다. `drop` 이 필요하고,
 > **drop 하면 실행 권한이 사라지므로 `grant execute` 를 반드시 다시 해준다.**
 
+### `supabase/07_season_stats.sql`
+
+선생님 통계 화면이 쓰는 뷰 2개. 01~06 을 실행한 프로젝트에 덧씌운다.
+
+- `teacher_season_stats` — 시즌 한 줄에 문제 수(공개/전체) · 참여 학생 · 제출 수 · 정답 제출 수
+- `teacher_student_season_stats` — 시즌 × 학생. **`students` 를 cross join 한다.**
+  한 문제도 풀지 않은 학생이 0 으로 나와야 "누가 안 하고 있는지" 를 볼 수 있기 때문이다.
+
+둘 다 `security_invoker = true` 다. RLS 를 우회하지 않고 호출한 사람 권한으로 읽으므로,
+02_rls.sql 의 정책에 따라 선생님만 값을 볼 수 있다. anon 권한은 명시적으로 회수한다.
+
+> `correct_count` 는 (학생, 문제) 쌍당 최대 1건이다 — 이미 맞힌 문제는 다시 기록하지 않으므로
+> "맞힌 문제 수" 와 같은 값이다. 화면의 **정답률 = 정답 제출 ÷ 전체 제출** 이라,
+> 오답을 여러 번 시도할수록 낮아진다. 난이도 지표로 읽으면 된다.
+
 ---
 
 ## 5. 폴더 구조 (이대로. 더 만들지 않는다)
@@ -310,7 +325,7 @@ tsconfig.node.json
 vite.config.ts
 README.md
 PLAN.md
-supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql  06_seasons.sql
+supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql  06_seasons.sql  07_season_stats.sql
 src/
   main.tsx              # createRoot + BrowserRouter
   App.tsx               # 라우트 정의만
@@ -337,7 +352,7 @@ src/
     TeacherSeasons.tsx      "/teacher/seasons"       시즌 생성·이름수정·공개토글·삭제
     TeacherProblems.tsx     "/teacher"               목록·공개토글·삭제. ?season= 로 시즌 필터
     TeacherProblemEdit.tsx  "/teacher/problems/:id"  :id === "new" 면 등록, 아니면 수정
-    TeacherStats.tsx        "/teacher/stats"         teacher_student_stats + teacher_problem_stats 조회
+    TeacherStats.tsx        "/teacher/stats"         시즌 요약 + 시즌 필터가 걸리는 문제별·학생별 표
 ```
 
 ---

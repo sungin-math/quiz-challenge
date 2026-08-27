@@ -92,6 +92,30 @@ export type ProblemStats = {
   solved_students: number;
 }
 
+/** teacher_season_stats 뷰 한 행. 시즌 하나의 요약. */
+export type SeasonStats = {
+  season_id: string;
+  name: string;
+  is_published: boolean;
+  order_index: number;
+  problem_count: number;
+  published_problem_count: number;
+  participant_count: number;
+  attempt_count: number;
+  /** (학생, 문제) 쌍당 최대 1건이므로 "맞힌 문제 수" 와 같다. */
+  correct_count: number;
+}
+
+/** teacher_student_season_stats 뷰 한 행. 시즌 × 학생. 한 번도 안 푼 학생도 0 으로 나온다. */
+export type StudentSeasonStats = {
+  season_id: string;
+  student_id: string;
+  nickname: string;
+  attempt_count: number;
+  solved_count: number;
+  last_submitted_at: string | null;
+}
+
 /**
  * supabase-js 클라이언트에 넘기는 스키마 타입.
  * supabase/*.sql 의 테이블·뷰·RPC 와 1:1로 맞춘다. SQL 을 고치면 여기도 같이 고친다.
@@ -164,6 +188,8 @@ export interface Database {
     Views: {
       teacher_student_stats: { Row: StudentStats; Relationships: [] };
       teacher_problem_stats: { Row: ProblemStats; Relationships: [] };
+      teacher_season_stats: { Row: SeasonStats; Relationships: [] };
+      teacher_student_season_stats: { Row: StudentSeasonStats; Relationships: [] };
     };
     Functions: {
       start_session: { Args: { p_nickname: string }; Returns: string };

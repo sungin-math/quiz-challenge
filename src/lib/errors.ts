@@ -50,7 +50,7 @@ export function toUserMessage(error: unknown): string {
     case '22P02':
       return '코드 형식이 올바르지 않습니다. 이어하기 코드를 다시 확인해 주세요.';
     case 'PGRST202':
-      return '서버 함수를 찾을 수 없습니다. Supabase SQL Editor에서 01~06 스크립트를 순서대로 실행했는지 확인해 주세요.';
+      return '서버 함수를 찾을 수 없습니다. Supabase SQL Editor에서 01~07 스크립트를 순서대로 실행했는지 확인해 주세요.';
     case 'PGRST301':
       return '접근 권한이 없습니다. 다시 로그인해 주세요.';
     default:
