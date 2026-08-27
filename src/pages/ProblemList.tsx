@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { MathText } from '../components/MathText';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
 import { useStudent } from '../lib/session';
@@ -78,7 +79,7 @@ export default function ProblemList() {
                     {row.solved ? '✓' : index + 1}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium text-slate-900">{row.title}</span>
+                    <span className="block truncate font-medium text-slate-900"><MathText text={row.title} /></span>
                     <span className="block text-xs text-slate-500">
                       {row.solved ? '정답' : row.attempts > 0 ? `${row.attempts}번 시도함` : '아직 풀지 않음'}
                     </span>

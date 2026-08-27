@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { MathText } from '../components/MathText';
+import { removeProblemImage } from '../lib/images';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
 import type { LoadState, Problem } from '../lib/types';
@@ -59,6 +61,11 @@ export default function TeacherProblems() {
     setBusyProblemId(problem.id);
 
     const { error } = await supabase.from('problems').delete().eq('id', problem.id);
+
+    if (!error && problem.image_path) {
+      // 문제가 사라졌으니 딸린 그림도 저장소에서 지운다.
+      await removeProblemImage(problem.image_path);
+    }
 
     setBusyProblemId(null);
     if (error) {
@@ -145,7 +152,7 @@ export default function TeacherProblems() {
                     {problem.is_published ? '공개' : '비공개'}
                   </span>
                 </div>
-                <p className="mt-1 truncate font-medium text-slate-900">{problem.title}</p>
+                <p className="mt-1 truncate font-medium text-slate-900"><MathText text={problem.title} /></p>
                 <p className="mt-0.5 truncate text-xs text-slate-500">
                   정답 {problem.answers.length}개: {problem.answers.join(' / ')}
                 </p>

@@ -23,7 +23,7 @@
 | 동명이인 | 허용 (이름은 식별자가 아님) |
 | 오답 재시도 | 무제한. 단 분당 30회 속도 제한 |
 | 리더보드 | 없음 |
-| 문제 본문 | 순수 텍스트 (마크다운·이미지·수식 없음) |
+| 문제 본문 | 텍스트 + LaTeX 수식(`$...$`) + 이미지 1장. 마크다운은 없음 |
 | 선생님 | 1명. `teachers` 테이블에 SQL로 직접 등록 |
 
 ---
@@ -43,6 +43,16 @@
 7. **스택**: Vite + React + TypeScript, react-router-dom v7, @supabase/supabase-js v2,
    Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, config 파일 없이 `@import "tailwindcss";`).
    **전역 상태 라이브러리 없음.**
+8. **수식 = KaTeX, DB 는 건드리지 않는다.**
+   본문 text 안에 `$...$`(인라인) / `$$...$$`(블록) 로 적힌 LaTeX 를 브라우저가 렌더링할 뿐이다.
+   수식 전용 컬럼도, 저장 형식 변환도 없다. 그래서 본문은 여전히 검색·수정이 쉬운 평범한 텍스트다.
+   KaTeX 는 번들에 포함한다 (CDN 을 쓰지 않는다). 수식에 오타가 있으면 원문을 붉게 표시해
+   선생님이 바로 알아채게 한다.
+9. **그림 = 문제당 1장, Supabase Storage 의 public 버킷.**
+   `problems.image_path` 에 파일 경로만 저장하고 주소는 화면에서 조립한다.
+   학생은 로그인이 없으므로 읽기는 공개여야 한다. 파일 이름이 랜덤 UUID 라 주소를 모르면
+   접근할 수 없고, 애초에 공개 문제의 본문 그림이므로 공개돼도 문제되지 않는다.
+   **정답은 그림이 아니라 DB 에 있다는 원칙은 그대로다.** 업로드·삭제는 선생님만 가능하다.
 
 ---
 
@@ -250,6 +260,18 @@ grant execute on function public.start_session(text),
 - `insert into public.teachers(id, email) values ('<USER_UID>', '<EMAIL>');`
 - 샘플 문제 3개 insert (복수 정답 예시 포함, 2개는 `is_published = true`, 1개는 `false`)
 
+### `supabase/05_media.sql`
+
+수식·이미지 지원을 위해 나중에 덧씌운 변경분. 01~04 를 이미 실행한 프로젝트에 그대로 실행한다.
+여러 번 실행해도 안전하다. 수식은 DB 를 건드리지 않으므로 여기 있는 것은 이미지용뿐이다.
+
+- `problems.image_path text` 컬럼 추가 (`add column if not exists`)
+- `get_problem` 을 `drop` 후 재생성 — 반환 컬럼에 `image_path` 가 늘어 타입이 바뀌므로
+  `create or replace` 로는 안 된다. **drop 하면 권한도 사라지므로 `grant execute` 를 다시 해준다.**
+  `answers` 를 반환하지 않는다는 원칙은 그대로다.
+- `problem-images` 버킷 생성 (`public = true`), 5MB · 이미지 MIME 만 허용하도록 버킷에 제한 설정
+- `storage.objects` 에 정책 하나: 이 버킷에 대한 쓰기는 `public.is_teacher()` 인 계정만
+
 ---
 
 ## 5. 폴더 구조 (이대로. 더 만들지 않는다)
@@ -265,7 +287,7 @@ tsconfig.node.json
 vite.config.ts
 README.md
 PLAN.md
-supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql
+supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql
 src/
   main.tsx              # createRoot + BrowserRouter
   App.tsx               # 라우트 정의만
@@ -276,8 +298,10 @@ src/
     types.ts            # Problem, ProblemSummary, ProgressRow, SubmitResult, StudentStats, ProblemStats
     session.ts          # localStorage 키 "quiz.student" 에 {id, nickname} 저장. get/set/clear + useStudent 훅
     errors.ts           # Supabase PostgrestError → 사용자용 한국어 메시지 변환
+    images.ts           # 문제 그림 업로드·삭제·공개 URL (Supabase Storage)
   components/
     Layout.tsx          # 공통 헤더/컨테이너
+    MathText.tsx        # 본문 속 $...$ 를 KaTeX 로 렌더링
     RequireStudent.tsx  # 세션 없으면 "/" 로 리다이렉트
     RequireTeacher.tsx  # Auth 세션 + teachers 본인 행 확인, 실패 시 /teacher/login
   pages/

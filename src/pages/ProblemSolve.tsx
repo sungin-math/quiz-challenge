@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { MathText } from '../components/MathText';
+import { problemImageUrl } from '../lib/images';
 import { supabase } from '../lib/supabase';
 import { isInvalidSessionError, toUserMessage } from '../lib/errors';
 import { clearStudent, useStudent } from '../lib/session';
@@ -132,11 +134,25 @@ export default function ProblemSolve() {
 
       {state.status === 'ready' && state.value !== null && (
         <article className="mt-4">
-          <h1 className="text-xl font-bold text-slate-900">{state.value.title}</h1>
+          <h1 className="text-xl font-bold text-slate-900">
+            <MathText text={state.value.title} />
+          </h1>
           {state.value.body.trim().length > 0 && (
             <p className="mt-3 whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-4 text-slate-800">
-              {state.value.body}
+              <MathText text={state.value.body} />
             </p>
+          )}
+          {/* 05_media.sql 을 아직 실행하지 않은 서버는 이 필드를 아예 내려주지 않는다.
+              null 뿐 아니라 undefined 도 걸러야 화면이 깨지지 않는다. */}
+          {state.value.image_path && (
+            <figure className="mt-3 rounded-lg border border-slate-200 bg-white p-2">
+              <img
+                src={problemImageUrl(state.value.image_path)}
+                alt="문제에 딸린 그림"
+                loading="lazy"
+                className="mx-auto max-h-[70vh] w-auto max-w-full"
+              />
+            </figure>
           )}
 
           <form onSubmit={handleSubmit} className="mt-4">

@@ -14,6 +14,8 @@ export type Problem = {
   id: string;
   title: string;
   body: string;
+  /** storage 의 problem-images 버킷 안 파일 경로. 이미지가 없으면 null. */
+  image_path: string | null;
   answers: string[];
   is_published: boolean;
   order_index: number;
@@ -27,6 +29,7 @@ export type ProblemSummary = {
   problem_id: string;
   title: string;
   body: string;
+  image_path: string | null;
 }
 
 /** get_problems_with_progress RPC 결과 한 행. */
@@ -89,6 +92,7 @@ export interface Database {
           is_published?: boolean;
           order_index?: number;
           created_by?: string | null;
+          image_path?: string | null;
         };
         Update: {
           title?: string;
@@ -96,6 +100,7 @@ export interface Database {
           answers?: string[];
           is_published?: boolean;
           order_index?: number;
+          image_path?: string | null;
         };
         Relationships: [];
       };

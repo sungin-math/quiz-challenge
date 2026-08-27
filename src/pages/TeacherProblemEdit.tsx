@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { MathText } from '../components/MathText';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
+import { IMAGE_ACCEPT, problemImageUrl, removeProblemImage, uploadProblemImage } from '../lib/images';
 import type { Problem } from '../lib/types';
 
 /** 기존 문제를 불러오는 동안의 상태. 새 문제는 불러올 것이 없으므로 곧바로 ready. */
@@ -14,6 +16,9 @@ type EditorState =
 
 const ANSWER_GUIDE =
   "정답은 한 줄에 하나씩. 대소문자와 앞뒤 공백은 무시되지만 '10'과 '십'은 다르게 처리되니 표기 변형을 모두 적어주세요";
+
+const MATH_GUIDE =
+  '수식은 달러 기호로 감쌉니다. 문장 안에 넣으려면 $x^2-4x+3$ 처럼, 가운데 크게 넣으려면 $$\\frac{a}{b}$$ 처럼 씁니다. 달러 기호 자체를 쓰려면 \\$ 로 적으세요.';
 
 /** textarea 한 줄 = 정답 하나. 빈 줄은 버린다. */
 function parseAnswers(text: string): string[] {
@@ -36,6 +41,15 @@ export default function TeacherProblemEdit() {
   const [orderIndex, setOrderIndex] = useState('0');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [imagePath, setImagePath] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  /**
+   * 화면에서 치웠지만 저장소에는 아직 남아 있는 파일들.
+   * 저장에 성공한 뒤에 지운다 — 저장을 취소하고 나가면 DB 는 옛 경로를 가리키고 있으므로,
+   * 미리 지워버리면 멀쩡한 문제의 그림이 깨진다.
+   */
+  const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
 
   const load = useCallback(async (): Promise<void> => {
     if (!id || id === 'new') return;
@@ -64,12 +78,39 @@ export default function TeacherProblemEdit() {
     setAnswersText(problem.answers.join('\n'));
     setIsPublished(problem.is_published);
     setOrderIndex(String(problem.order_index));
+    setImagePath(problem.image_path ?? null);
     setEditorState({ status: 'ready' });
   }, [id]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function handleImageChange(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = event.target.files?.[0];
+    // 같은 파일을 다시 골라도 change 가 발생하도록 입력값을 비워둔다.
+    event.target.value = '';
+    if (!file) return;
+
+    setImageError(null);
+    setIsUploading(true);
+    const result = await uploadProblemImage(file);
+    setIsUploading(false);
+
+    if ('error' in result) {
+      setImageError(result.error);
+      return;
+    }
+    if (imagePath !== null) setPendingRemovals((paths) => [...paths, imagePath]);
+    setImagePath(result.path);
+  }
+
+  function handleImageRemove(): void {
+    if (imagePath === null) return;
+    setPendingRemovals((paths) => [...paths, imagePath]);
+    setImagePath(null);
+    setImageError(null);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -114,6 +155,7 @@ export default function TeacherProblemEdit() {
         is_published: isPublished,
         order_index: parsedOrderIndex,
         created_by: userResult.user.id,
+        image_path: imagePath,
       });
 
       setIsSaving(false);
@@ -121,6 +163,7 @@ export default function TeacherProblemEdit() {
         setSaveError(toUserMessage(error));
         return;
       }
+      await cleanUpReplacedImages();
       navigate('/teacher');
       return;
     }
@@ -139,6 +182,7 @@ export default function TeacherProblemEdit() {
         answers,
         is_published: isPublished,
         order_index: parsedOrderIndex,
+        image_path: imagePath,
       })
       .eq('id', id);
 
@@ -147,7 +191,14 @@ export default function TeacherProblemEdit() {
       setSaveError(toUserMessage(error));
       return;
     }
+    await cleanUpReplacedImages();
     navigate('/teacher');
+  }
+
+  /** 저장이 끝난 뒤 아무도 참조하지 않게 된 파일들을 지운다. 실패해도 흐름을 막지 않는다. */
+  async function cleanUpReplacedImages(): Promise<void> {
+    await Promise.all(pendingRemovals.map((path) => removeProblemImage(path)));
+    setPendingRemovals([]);
   }
 
   return (
@@ -203,7 +254,70 @@ export default function TeacherProblemEdit() {
               rows={5}
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
-            <p className="mt-1 text-xs text-slate-500">줄바꿈은 그대로 보입니다. 서식 없는 순수 텍스트입니다.</p>
+            <p className="mt-1 text-xs text-slate-500">줄바꿈은 그대로 보입니다.</p>
+            <p className="mt-2 rounded-md bg-sky-50 px-3 py-2 text-xs text-sky-900">{MATH_GUIDE}</p>
+
+            <p className="mt-4 text-sm font-medium text-slate-700">미리보기 (학생에게 보이는 모습)</p>
+            <div className="mt-1 min-h-16 whitespace-pre-wrap rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-slate-800">
+              {title.trim().length === 0 && body.trim().length === 0 ? (
+                <span className="text-slate-400">제목과 본문을 입력하면 여기에 나타납니다.</span>
+              ) : (
+                <>
+                  {title.trim().length > 0 && (
+                    <span className="block font-bold">
+                      <MathText text={title} />
+                    </span>
+                  )}
+                  {body.trim().length > 0 && <MathText text={body} />}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <p className="text-sm font-medium text-slate-700">그림 (선택)</p>
+            <p className="mt-1 text-xs text-slate-500">
+              그래프·도형 사진을 1장 붙일 수 있습니다. PNG · JPG · WEBP · GIF, 5MB 이하.
+            </p>
+
+            {imagePath !== null && (
+              <figure className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
+                <img
+                  src={problemImageUrl(imagePath)}
+                  alt="올린 그림 미리보기"
+                  className="mx-auto max-h-64 w-auto max-w-full"
+                />
+              </figure>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                {imagePath === null ? '이미지 선택' : '다른 이미지로 교체'}
+                <input
+                  type="file"
+                  accept={IMAGE_ACCEPT}
+                  disabled={isUploading}
+                  onChange={(event) => void handleImageChange(event)}
+                  className="hidden"
+                />
+              </label>
+              {imagePath !== null && (
+                <button
+                  type="button"
+                  onClick={handleImageRemove}
+                  className="rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50"
+                >
+                  이미지 삭제
+                </button>
+              )}
+              {isUploading && <span className="text-sm text-slate-500">올리는 중…</span>}
+            </div>
+
+            {imageError !== null && (
+              <p className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {imageError}
+              </p>
+            )}
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-4">
