@@ -1,0 +1,14 @@
+node_modules
+dist
+dist-ssr
+
+.env
+.env.local
+.env.*.local
+
+*.log
+npm-debug.log*
+.DS_Store
+.vite
+*.tsbuildinfo
+.netlify
