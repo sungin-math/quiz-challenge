@@ -236,12 +236,12 @@ export default function TeacherProblemEdit() {
 
   return (
     <Layout>
-      <Link to="/teacher" className="text-sm text-slate-500 hover:text-slate-800">
+      <Link to="/teacher" className="text-sm text-stone-500 hover:text-stone-800">
         ← 문제 관리
       </Link>
-      <h1 className="mt-2 text-xl font-bold text-slate-900">{isNew ? '새 문제 등록' : '문제 수정'}</h1>
+      <h1 className="mt-2 text-xl font-bold text-stone-900">{isNew ? '새 문제 등록' : '문제 수정'}</h1>
 
-      {editorState.status === 'loading' && <p className="mt-4 text-slate-500">불러오는 중입니다…</p>}
+      {editorState.status === 'loading' && <p className="mt-4 text-stone-500">불러오는 중입니다…</p>}
 
       {editorState.status === 'error' && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -257,15 +257,15 @@ export default function TeacherProblemEdit() {
       )}
 
       {editorState.status === 'missing' && (
-        <p className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+        <p className="mt-4 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
           문제를 찾을 수 없습니다. 이미 삭제된 문제일 수 있습니다.
         </p>
       )}
 
       {editorState.status === 'ready' && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <label htmlFor="season" className="block text-sm font-medium text-slate-700">
+          <div className="rounded-lg border border-stone-200 bg-white p-4">
+            <label htmlFor="season" className="block text-sm font-medium text-stone-700">
               시즌
             </label>
             {seasons.length === 0 ? (
@@ -281,7 +281,7 @@ export default function TeacherProblemEdit() {
                 id="season"
                 value={seasonId}
                 onChange={(event) => setSeasonId(event.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
               >
                 {seasons.map((season) => (
                   <option key={season.id} value={season.id}>
@@ -291,13 +291,13 @@ export default function TeacherProblemEdit() {
                 ))}
               </select>
             )}
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-stone-500">
               공개된 시즌의 공개된 문제만 학생에게 보입니다. 시즌을 바꾸면 학생들의 제출 기록은 그대로 따라갑니다.
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <label htmlFor="title" className="block text-sm font-medium text-slate-700">
+          <div className="rounded-lg border border-stone-200 bg-white p-4">
+            <label htmlFor="title" className="block text-sm font-medium text-stone-700">
               제목 (문제 질문)
             </label>
             <input
@@ -306,10 +306,10 @@ export default function TeacherProblemEdit() {
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={200}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
 
-            <label htmlFor="body" className="mt-4 block text-sm font-medium text-slate-700">
+            <label htmlFor="body" className="mt-4 block text-sm font-medium text-stone-700">
               본문 (선택)
             </label>
             <textarea
@@ -317,15 +317,15 @@ export default function TeacherProblemEdit() {
               value={body}
               onChange={(event) => setBody(event.target.value)}
               rows={5}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
-            <p className="mt-1 text-xs text-slate-500">줄바꿈은 그대로 보입니다.</p>
+            <p className="mt-1 text-xs text-stone-500">줄바꿈은 그대로 보입니다.</p>
             <p className="mt-2 rounded-md bg-sky-50 px-3 py-2 text-xs text-sky-900">{MATH_GUIDE}</p>
 
-            <p className="mt-4 text-sm font-medium text-slate-700">미리보기 (학생에게 보이는 모습)</p>
-            <div className="mt-1 min-h-16 whitespace-pre-wrap rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-slate-800">
+            <p className="mt-4 text-sm font-medium text-stone-700">미리보기 (학생에게 보이는 모습)</p>
+            <div className="mt-1 min-h-16 whitespace-pre-wrap rounded-md border border-dashed border-stone-300 bg-stone-50 p-3 text-stone-800">
               {title.trim().length === 0 && body.trim().length === 0 ? (
-                <span className="text-slate-400">제목과 본문을 입력하면 여기에 나타납니다.</span>
+                <span className="text-stone-400">제목과 본문을 입력하면 여기에 나타납니다.</span>
               ) : (
                 <>
                   {title.trim().length > 0 && (
@@ -339,14 +339,14 @@ export default function TeacherProblemEdit() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-sm font-medium text-slate-700">그림 (선택)</p>
-            <p className="mt-1 text-xs text-slate-500">
+          <div className="rounded-lg border border-stone-200 bg-white p-4">
+            <p className="text-sm font-medium text-stone-700">그림 (선택)</p>
+            <p className="mt-1 text-xs text-stone-500">
               그래프·도형 사진을 1장 붙일 수 있습니다. PNG · JPG · WEBP · GIF, 5MB 이하.
             </p>
 
             {imagePath !== null && (
-              <figure className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
+              <figure className="mt-3 rounded-md border border-stone-200 bg-stone-50 p-2">
                 <img
                   src={problemImageUrl(imagePath)}
                   alt="올린 그림 미리보기"
@@ -356,7 +356,7 @@ export default function TeacherProblemEdit() {
             )}
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <label className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              <label className="cursor-pointer rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50">
                 {imagePath === null ? '이미지 선택' : '다른 이미지로 교체'}
                 <input
                   type="file"
@@ -375,7 +375,7 @@ export default function TeacherProblemEdit() {
                   이미지 삭제
                 </button>
               )}
-              {isUploading && <span className="text-sm text-slate-500">올리는 중…</span>}
+              {isUploading && <span className="text-sm text-stone-500">올리는 중…</span>}
             </div>
 
             {imageError !== null && (
@@ -385,8 +385,8 @@ export default function TeacherProblemEdit() {
             )}
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <label htmlFor="answers" className="block text-sm font-medium text-slate-700">
+          <div className="rounded-lg border border-stone-200 bg-white p-4">
+            <label htmlFor="answers" className="block text-sm font-medium text-stone-700">
               정답
             </label>
             <p className="mt-1 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">{ANSWER_GUIDE}</p>
@@ -397,15 +397,15 @@ export default function TeacherProblemEdit() {
               rows={5}
               spellCheck={false}
               placeholder={'서울\n서울특별시\nseoul'}
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="mt-2 w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-stone-500">
               현재 {parseAnswers(answersText).length}개 / 최대 20개
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <label htmlFor="orderIndex" className="block text-sm font-medium text-slate-700">
+          <div className="rounded-lg border border-stone-200 bg-white p-4">
+            <label htmlFor="orderIndex" className="block text-sm font-medium text-stone-700">
               순서
             </label>
             <input
@@ -413,16 +413,16 @@ export default function TeacherProblemEdit() {
               type="number"
               value={orderIndex}
               onChange={(event) => setOrderIndex(event.target.value)}
-              className="mt-1 w-32 rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="mt-1 w-32 rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
-            <p className="mt-1 text-xs text-slate-500">숫자가 작을수록 목록 위에 표시됩니다.</p>
+            <p className="mt-1 text-xs text-stone-500">숫자가 작을수록 목록 위에 표시됩니다.</p>
 
-            <label className="mt-4 flex items-center gap-2 text-sm font-medium text-slate-700">
+            <label className="mt-4 flex items-center gap-2 text-sm font-medium text-stone-700">
               <input
                 type="checkbox"
                 checked={isPublished}
                 onChange={(event) => setIsPublished(event.target.checked)}
-                className="h-4 w-4 rounded border-slate-300"
+                className="h-4 w-4 rounded border-stone-300"
               />
               학생에게 공개
             </label>
@@ -438,13 +438,13 @@ export default function TeacherProblemEdit() {
             <button
               type="submit"
               disabled={isSaving}
-              className="rounded-md bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="rounded-md bg-brand-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300"
             >
               {isSaving ? '저장 중…' : '저장'}
             </button>
             <Link
               to="/teacher"
-              className="rounded-md border border-slate-300 bg-white px-6 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-md border border-stone-300 bg-white px-6 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
               취소
             </Link>

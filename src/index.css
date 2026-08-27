@@ -1,9 +1,31 @@
 @import "tailwindcss";
 
+/*
+ * 브랜드 색은 강성인 수학 로고에서 그대로 뽑았다.
+ *   brand-900 #1d0606 — 로고의 잉크색 (거의 검정에 가까운 따뜻한 먹색)
+ *   brand-600 #8a1c21 — 로고 'i' 의 점과 그라데이션 윗부분의 버건디
+ * 나머지 단계는 이 둘 사이를 Tailwind 의 명도 단계에 맞춰 채운 것이다.
+ *
+ * 정답(초록)·오답(주황)·오류(빨강)는 브랜드색으로 바꾸지 않는다.
+ * 의미를 색으로 구분하는 자리라 브랜드색과 섞이면 읽기 어려워진다.
+ */
+@theme {
+  --color-brand-50: #fdf4f4;
+  --color-brand-100: #fae6e7;
+  --color-brand-200: #f2c9cb;
+  --color-brand-300: #e3a0a4;
+  --color-brand-400: #c9646b;
+  --color-brand-500: #a83039;
+  --color-brand-600: #8a1c21;
+  --color-brand-700: #6d171b;
+  --color-brand-800: #4a1013;
+  --color-brand-900: #1d0606;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-stone-50 text-stone-900 antialiased;
 }

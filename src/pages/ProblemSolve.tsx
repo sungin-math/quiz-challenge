@@ -111,11 +111,11 @@ export default function ProblemSolve() {
 
   return (
     <Layout>
-      <Link to={backTo} className="text-sm text-slate-500 hover:text-slate-800">
+      <Link to={backTo} className="text-sm text-stone-500 hover:text-stone-800">
         ← 문제 목록
       </Link>
 
-      {state.status === 'loading' && <p className="mt-4 text-slate-500">불러오는 중입니다…</p>}
+      {state.status === 'loading' && <p className="mt-4 text-stone-500">불러오는 중입니다…</p>}
 
       {state.status === 'error' && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -131,25 +131,25 @@ export default function ProblemSolve() {
       )}
 
       {state.status === 'ready' && state.value === null && (
-        <p className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+        <p className="mt-4 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
           문제를 찾을 수 없습니다. 삭제되었거나 아직 공개되지 않은 문제입니다.
         </p>
       )}
 
       {state.status === 'ready' && state.value !== null && (
         <article className="mt-4">
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-stone-900">
             <MathText text={state.value.title} />
           </h1>
           {state.value.body.trim().length > 0 && (
-            <p className="mt-3 whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-4 text-slate-800">
+            <p className="mt-3 whitespace-pre-wrap rounded-lg border border-stone-200 bg-white p-4 text-stone-800">
               <MathText text={state.value.body} />
             </p>
           )}
           {/* 05_media.sql 을 아직 실행하지 않은 서버는 이 필드를 아예 내려주지 않는다.
               null 뿐 아니라 undefined 도 걸러야 화면이 깨지지 않는다. */}
           {state.value.image_path && (
-            <figure className="mt-3 rounded-lg border border-slate-200 bg-white p-2">
+            <figure className="mt-3 rounded-lg border border-stone-200 bg-white p-2">
               <img
                 src={problemImageUrl(state.value.image_path)}
                 alt="문제에 딸린 그림"
@@ -160,7 +160,7 @@ export default function ProblemSolve() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-4">
-            <label htmlFor="answer" className="block text-sm font-medium text-slate-700">
+            <label htmlFor="answer" className="block text-sm font-medium text-stone-700">
               정답
             </label>
             <input
@@ -173,12 +173,12 @@ export default function ProblemSolve() {
               }}
               maxLength={500}
               autoComplete="off"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-3 w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto sm:px-8"
+              className="mt-3 w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300 sm:w-auto sm:px-8"
             >
               {isSubmitting ? '채점 중…' : '제출하기'}
             </button>
@@ -208,7 +208,7 @@ export default function ProblemSolve() {
           {isSolved && (
             <Link
               to={backTo}
-              className="mt-4 inline-block rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="mt-4 inline-block rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
               다른 문제 풀러 가기
             </Link>

@@ -99,9 +99,9 @@ export default function TeacherStats() {
 
   return (
     <Layout>
-      <h1 className="text-xl font-bold text-slate-900">통계</h1>
+      <h1 className="text-xl font-bold text-stone-900">통계</h1>
 
-      {state.status === 'loading' && <p className="mt-4 text-slate-500">불러오는 중입니다…</p>}
+      {state.status === 'loading' && <p className="mt-4 text-stone-500">불러오는 중입니다…</p>}
 
       {state.status === 'error' && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -119,15 +119,15 @@ export default function TeacherStats() {
       {stats !== null && (
         <div className="mt-4 space-y-8">
           <section>
-            <h2 className="text-base font-semibold text-slate-800">시즌별</h2>
+            <h2 className="text-base font-semibold text-stone-800">시즌별</h2>
             {stats.seasons.length === 0 ? (
-              <p className="mt-2 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+              <p className="mt-2 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
                 아직 시즌이 없습니다.
               </p>
             ) : (
-              <div className="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+              <div className="mt-2 overflow-x-auto rounded-lg border border-stone-200 bg-white">
                 <table className="w-full min-w-[36rem] text-sm">
-                  <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                  <thead className="bg-stone-50 text-left text-xs text-stone-500">
                     <tr>
                       <th className="px-3 py-2 font-medium">시즌</th>
                       <th className="px-3 py-2 font-medium">공개</th>
@@ -139,13 +139,13 @@ export default function TeacherStats() {
                   </thead>
                   <tbody>
                     {stats.seasons.map((row) => (
-                      <tr key={row.season_id} className="border-t border-slate-100">
-                        <td className="max-w-[14rem] truncate px-3 py-2 text-slate-900">{row.name}</td>
-                        <td className="px-3 py-2 text-slate-500">{row.is_published ? '공개' : '비공개'}</td>
+                      <tr key={row.season_id} className="border-t border-stone-100">
+                        <td className="max-w-[14rem] truncate px-3 py-2 text-stone-900">{row.name}</td>
+                        <td className="px-3 py-2 text-stone-500">{row.is_published ? '공개' : '비공개'}</td>
                         <td className="px-3 py-2 text-right tabular-nums">
                           {row.published_problem_count}
                           {row.problem_count !== row.published_problem_count && (
-                            <span className="text-slate-400"> / {row.problem_count}</span>
+                            <span className="text-stone-400"> / {row.problem_count}</span>
                           )}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">{row.participant_count}</td>
@@ -159,21 +159,21 @@ export default function TeacherStats() {
                 </table>
               </div>
             )}
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-stone-500">
               문제 열은 <strong>공개 / 전체</strong> 입니다. 정답률은 정답 제출 ÷ 전체 제출이라, 오답을 여러 번
               시도할수록 낮아집니다.
             </p>
           </section>
 
           <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="statsSeason" className="text-sm text-slate-600">
+            <label htmlFor="statsSeason" className="text-sm text-stone-600">
               아래 표 기준
             </label>
             <select
               id="statsSeason"
               value={seasonFilter}
               onChange={(event) => setSeasonFilter(event.target.value)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
+              className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-brand-500"
             >
               <option value="">전체 시즌 (누적)</option>
               {stats.seasons.map((season) => (
@@ -185,20 +185,20 @@ export default function TeacherStats() {
           </div>
 
           <section>
-            <h2 className="text-base font-semibold text-slate-800">
+            <h2 className="text-base font-semibold text-stone-800">
               문제별
               {selectedSeason !== null && (
-                <span className="ml-2 text-sm font-normal text-slate-500">{selectedSeason.name}</span>
+                <span className="ml-2 text-sm font-normal text-stone-500">{selectedSeason.name}</span>
               )}
             </h2>
             {visibleProblems.length === 0 ? (
-              <p className="mt-2 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+              <p className="mt-2 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
                 {seasonFilter === '' ? '등록된 문제가 없습니다.' : '이 시즌에는 문제가 없습니다.'}
               </p>
             ) : (
-              <div className="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+              <div className="mt-2 overflow-x-auto rounded-lg border border-stone-200 bg-white">
                 <table className="w-full min-w-[36rem] text-sm">
-                  <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                  <thead className="bg-stone-50 text-left text-xs text-stone-500">
                     <tr>
                       {seasonFilter === '' && <th className="px-3 py-2 font-medium">시즌</th>}
                       <th className="px-3 py-2 font-medium">제목</th>
@@ -210,14 +210,14 @@ export default function TeacherStats() {
                   </thead>
                   <tbody>
                     {visibleProblems.map((row) => (
-                      <tr key={row.problem_id} className="border-t border-slate-100">
+                      <tr key={row.problem_id} className="border-t border-stone-100">
                         {seasonFilter === '' && (
-                          <td className="max-w-[10rem] truncate px-3 py-2 text-slate-500">{row.season_name}</td>
+                          <td className="max-w-[10rem] truncate px-3 py-2 text-stone-500">{row.season_name}</td>
                         )}
-                        <td className="max-w-[16rem] truncate px-3 py-2 text-slate-900">
+                        <td className="max-w-[16rem] truncate px-3 py-2 text-stone-900">
                           <MathText text={row.title} />
                         </td>
-                        <td className="px-3 py-2 text-slate-500">{row.is_published ? '공개' : '비공개'}</td>
+                        <td className="px-3 py-2 text-stone-500">{row.is_published ? '공개' : '비공개'}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{row.total_attempts}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{row.attempted_students}</td>
                         <td className="px-3 py-2 text-right tabular-nums font-medium text-emerald-700">
@@ -232,22 +232,22 @@ export default function TeacherStats() {
           </section>
 
           <section>
-            <h2 className="text-base font-semibold text-slate-800">
+            <h2 className="text-base font-semibold text-stone-800">
               학생별
               {selectedSeason !== null && (
-                <span className="ml-2 text-sm font-normal text-slate-500">{selectedSeason.name}</span>
+                <span className="ml-2 text-sm font-normal text-stone-500">{selectedSeason.name}</span>
               )}
             </h2>
 
             {selectedSeason === null ? (
               stats.students.length === 0 ? (
-                <p className="mt-2 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+                <p className="mt-2 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
                   아직 참여한 학생이 없습니다.
                 </p>
               ) : (
-                <div className="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                <div className="mt-2 overflow-x-auto rounded-lg border border-stone-200 bg-white">
                   <table className="w-full min-w-[30rem] text-sm">
-                    <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                    <thead className="bg-stone-50 text-left text-xs text-stone-500">
                       <tr>
                         <th className="px-3 py-2 font-medium">이름</th>
                         <th className="px-3 py-2 text-right font-medium">맞힌 문제</th>
@@ -257,13 +257,13 @@ export default function TeacherStats() {
                     </thead>
                     <tbody>
                       {stats.students.map((row) => (
-                        <tr key={row.student_id} className="border-t border-slate-100">
-                          <td className="max-w-[12rem] truncate px-3 py-2 text-slate-900">{row.nickname}</td>
+                        <tr key={row.student_id} className="border-t border-stone-100">
+                          <td className="max-w-[12rem] truncate px-3 py-2 text-stone-900">{row.nickname}</td>
                           <td className="px-3 py-2 text-right tabular-nums font-medium text-emerald-700">
                             {row.solved_count}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">{row.attempt_count}</td>
-                          <td className="px-3 py-2 text-slate-500">{formatDateTime(row.last_seen_at)}</td>
+                          <td className="px-3 py-2 text-stone-500">{formatDateTime(row.last_seen_at)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -271,13 +271,13 @@ export default function TeacherStats() {
                 </div>
               )
             ) : visibleStudentSeasons.length === 0 ? (
-              <p className="mt-2 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+              <p className="mt-2 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
                 아직 참여한 학생이 없습니다.
               </p>
             ) : (
-              <div className="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+              <div className="mt-2 overflow-x-auto rounded-lg border border-stone-200 bg-white">
                 <table className="w-full min-w-[30rem] text-sm">
-                  <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                  <thead className="bg-stone-50 text-left text-xs text-stone-500">
                     <tr>
                       <th className="px-3 py-2 font-medium">이름</th>
                       <th className="px-3 py-2 text-right font-medium">맞힌 문제</th>
@@ -287,19 +287,19 @@ export default function TeacherStats() {
                   </thead>
                   <tbody>
                     {visibleStudentSeasons.map((row) => (
-                      <tr key={row.student_id} className="border-t border-slate-100">
-                        <td className="max-w-[12rem] truncate px-3 py-2 text-slate-900">{row.nickname}</td>
+                      <tr key={row.student_id} className="border-t border-stone-100">
+                        <td className="max-w-[12rem] truncate px-3 py-2 text-stone-900">{row.nickname}</td>
                         <td className="px-3 py-2 text-right tabular-nums font-medium text-emerald-700">
                           {row.solved_count}
-                          <span className="font-normal text-slate-400">
+                          <span className="font-normal text-stone-400">
                             {' '}
                             / {selectedSeason.published_problem_count}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums">{row.attempt_count}</td>
-                        <td className="px-3 py-2 text-slate-500">
+                        <td className="px-3 py-2 text-stone-500">
                           {row.last_submitted_at === null ? (
-                            <span className="text-slate-400">—</span>
+                            <span className="text-stone-400">—</span>
                           ) : (
                             formatDateTime(row.last_submitted_at)
                           )}
@@ -312,7 +312,7 @@ export default function TeacherStats() {
             )}
 
             {selectedSeason !== null && (
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-stone-500">
                 이 시즌에 한 번도 제출하지 않은 학생도 0 으로 표시됩니다.
               </p>
             )}

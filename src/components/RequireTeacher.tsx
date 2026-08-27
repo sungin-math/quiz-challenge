@@ -70,7 +70,7 @@ export default function RequireTeacher() {
   if (access.status === 'checking') {
     return (
       <Layout>
-        <p className="text-slate-500">권한을 확인하는 중입니다…</p>
+        <p className="text-stone-500">권한을 확인하는 중입니다…</p>
       </Layout>
     );
   }

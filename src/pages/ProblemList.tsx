@@ -50,14 +50,14 @@ export default function ProblemList() {
 
   return (
     <Layout>
-      <Link to="/seasons" className="text-sm text-slate-500 hover:text-slate-800">
+      <Link to="/seasons" className="text-sm text-stone-500 hover:text-stone-800">
         ← 시즌 목록
       </Link>
-      <h1 className="mt-2 text-xl font-bold text-slate-900">
+      <h1 className="mt-2 text-xl font-bold text-stone-900">
         {state.status === 'ready' && state.value.seasonName !== null ? state.value.seasonName : '문제 목록'}
       </h1>
 
-      {state.status === 'loading' && <p className="mt-4 text-slate-500">불러오는 중입니다…</p>}
+      {state.status === 'loading' && <p className="mt-4 text-stone-500">불러오는 중입니다…</p>}
 
       {state.status === 'error' && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -73,14 +73,14 @@ export default function ProblemList() {
       )}
 
       {state.status === 'ready' && state.value.rows.length === 0 && (
-        <p className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+        <p className="mt-4 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
           이 시즌에는 아직 공개된 문제가 없습니다. 선생님이 문제를 올리면 여기에 표시됩니다.
         </p>
       )}
 
       {state.status === 'ready' && state.value.rows.length > 0 && (
         <>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-stone-600">
             총 {state.value.rows.length}문제 중 {state.value.rows.filter((row) => row.solved).length}문제를 맞혔습니다.
           </p>
           <ul className="mt-4 space-y-2">
@@ -88,22 +88,22 @@ export default function ProblemList() {
               <li key={row.problem_id}>
                 <Link
                   to={`/problems/${row.problem_id}`}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 hover:border-indigo-300 hover:bg-indigo-50"
+                  className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-4 py-3 hover:border-brand-300 hover:bg-brand-50"
                 >
                   <span
                     className={
                       row.solved
                         ? 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700'
-                        : 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-medium text-slate-500'
+                        : 'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm font-medium text-stone-500'
                     }
                   >
                     {row.solved ? '✓' : index + 1}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium text-slate-900">
+                    <span className="block truncate font-medium text-stone-900">
                       <MathText text={row.title} />
                     </span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-xs text-stone-500">
                       {row.solved ? '정답' : row.attempts > 0 ? `${row.attempts}번 시도함` : '아직 풀지 않음'}
                     </span>
                   </span>

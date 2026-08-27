@@ -52,10 +52,10 @@ export default function MyProgress() {
 
   return (
     <Layout>
-      <h1 className="text-xl font-bold text-slate-900">내 기록</h1>
-      <p className="mt-1 text-sm text-slate-600">{displayName(student)} 님</p>
+      <h1 className="text-xl font-bold text-stone-900">내 기록</h1>
+      <p className="mt-1 text-sm text-stone-600">{displayName(student)} 님</p>
 
-      {state.status === 'loading' && <p className="mt-4 text-slate-500">불러오는 중입니다…</p>}
+      {state.status === 'loading' && <p className="mt-4 text-stone-500">불러오는 중입니다…</p>}
 
       {state.status === 'error' && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -71,19 +71,19 @@ export default function MyProgress() {
       )}
 
       {state.status === 'ready' && (
-        <section className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center">
+        <section className="mt-4 rounded-lg border border-stone-200 bg-white p-6 text-center">
           {totalCount === 0 ? (
-            <p className="text-sm text-slate-500">아직 공개된 문제가 없습니다.</p>
+            <p className="text-sm text-stone-500">아직 공개된 문제가 없습니다.</p>
           ) : (
             <>
-              <p className="text-3xl font-bold text-indigo-600">
+              <p className="text-3xl font-bold text-brand-600">
                 {solvedCount}
-                <span className="text-xl font-medium text-slate-400"> / {totalCount}</span>
+                <span className="text-xl font-medium text-stone-400"> / {totalCount}</span>
               </p>
-              <p className="mt-1 text-sm text-slate-600">전체 시즌에서 맞힌 문제 수</p>
-              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+              <p className="mt-1 text-sm text-stone-600">전체 시즌에서 맞힌 문제 수</p>
+              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-stone-100">
                 <div
-                  className="h-full rounded-full bg-indigo-500 transition-all"
+                  className="h-full rounded-full bg-brand-500 transition-all"
                   style={{ width: `${Math.round((solvedCount / totalCount) * 100)}%` }}
                 />
               </div>
@@ -94,18 +94,18 @@ export default function MyProgress() {
 
       {state.status === 'ready' && seasons.length > 0 && (
         <section className="mt-4">
-          <h2 className="text-sm font-medium text-slate-700">시즌별 진행률</h2>
+          <h2 className="text-sm font-medium text-stone-700">시즌별 진행률</h2>
           <ul className="mt-2 space-y-2">
             {seasons.map((season) => (
               <li key={season.season_id}>
                 <Link
                   to={`/seasons/${season.season_id}`}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 hover:border-indigo-300 hover:bg-indigo-50"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-4 py-3 hover:border-brand-300 hover:bg-brand-50"
                 >
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
                     {season.name}
                   </span>
-                  <span className="shrink-0 text-sm text-slate-600">
+                  <span className="shrink-0 text-sm text-stone-600">
                     {season.solved_count} / {season.total_problems}
                   </span>
                 </Link>
@@ -115,28 +115,28 @@ export default function MyProgress() {
         </section>
       )}
 
-      <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-medium text-slate-700">이어하기 코드</h2>
-        <p className="mt-1 text-xs text-slate-500">
+      <section className="mt-4 rounded-lg border border-stone-200 bg-white p-4">
+        <h2 className="text-sm font-medium text-stone-700">이어하기 코드</h2>
+        <p className="mt-1 text-xs text-stone-500">
           다른 기기에서 이어서 풀거나, 브라우저 기록을 지운 뒤 복구할 때 필요합니다. 모든 시즌에서 같은 코드를 씁니다. 남에게 알려주지 마세요.
         </p>
-        <p className="mt-2 break-all rounded-md bg-slate-50 px-3 py-2 font-mono text-sm text-slate-800">
+        <p className="mt-2 break-all rounded-md bg-stone-50 px-3 py-2 font-mono text-sm text-stone-800">
           {student.id}
         </p>
         <button
           type="button"
           onClick={() => void handleCopy(student.id)}
-          className="mt-3 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="mt-3 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
         >
           코드 복사
         </button>
-        {copyNotice && <p className="mt-2 text-xs text-slate-500">{copyNotice}</p>}
+        {copyNotice && <p className="mt-2 text-xs text-stone-500">{copyNotice}</p>}
       </section>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
           to="/seasons"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           문제 풀러 가기
         </Link>
@@ -146,7 +146,7 @@ export default function MyProgress() {
             clearStudent();
             navigate('/', { replace: true });
           }}
-          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
         >
           이 기기에서 나가기
         </button>

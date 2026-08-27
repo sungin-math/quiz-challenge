@@ -61,12 +61,20 @@ export default function TeacherLogin() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-sm">
-        <h1 className="text-xl font-bold text-slate-900">선생님 로그인</h1>
-        <p className="mt-1 text-sm text-slate-600">Supabase에 등록한 관리자 계정으로 로그인하세요.</p>
+      <div className="mx-auto max-w-sm text-center sm:text-left">
+        <img
+          src="/logo-mark.png"
+          alt=""
+          aria-hidden="true"
+          className="mx-auto h-12 w-12 sm:mx-0"
+          width={1330}
+          height={1330}
+        />
+        <h1 className="mt-3 text-xl font-bold text-stone-900">선생님 로그인</h1>
+        <p className="mt-1 text-sm text-stone-600">Supabase에 등록한 관리자 계정으로 로그인하세요.</p>
 
-        <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+        <form onSubmit={handleSubmit} className="mt-4 rounded-lg border border-stone-200 bg-white p-4">
+          <label htmlFor="email" className="block text-sm font-medium text-stone-700">
             이메일
           </label>
           <input
@@ -75,10 +83,10 @@ export default function TeacherLogin() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoComplete="username"
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
           />
 
-          <label htmlFor="password" className="mt-3 block text-sm font-medium text-slate-700">
+          <label htmlFor="password" className="mt-3 block text-sm font-medium text-stone-700">
             비밀번호
           </label>
           <input
@@ -87,13 +95,13 @@ export default function TeacherLogin() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
           />
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-4 w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="mt-4 w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300"
           >
             {isSubmitting ? '로그인 중…' : '로그인'}
           </button>
@@ -105,8 +113,8 @@ export default function TeacherLogin() {
           </p>
         )}
 
-        <p className="mt-4 text-center text-xs text-slate-400">
-          <Link to="/" className="hover:text-slate-600">
+        <p className="mt-4 text-center text-xs text-stone-400">
+          <Link to="/" className="hover:text-stone-600">
             학생 화면으로
           </Link>
         </p>

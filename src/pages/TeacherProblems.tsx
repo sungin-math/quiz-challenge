@@ -112,18 +112,18 @@ export default function TeacherProblems() {
   return (
     <Layout>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-slate-900">문제 관리</h1>
+        <h1 className="text-xl font-bold text-stone-900">문제 관리</h1>
         <div className="flex gap-2">
           <Link
             to={seasonFilter === '' ? '/teacher/problems/new' : `/teacher/problems/new?season=${seasonFilter}`}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
           >
             새 문제
           </Link>
           <button
             type="button"
             onClick={() => void signOut()}
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
           >
             로그아웃
           </button>
@@ -131,7 +131,7 @@ export default function TeacherProblems() {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <label htmlFor="seasonFilter" className="text-sm text-slate-600">
+        <label htmlFor="seasonFilter" className="text-sm text-stone-600">
           시즌
         </label>
         <select
@@ -141,7 +141,7 @@ export default function TeacherProblems() {
             const next = event.target.value;
             setSearchParams(next === '' ? {} : { season: next }, { replace: true });
           }}
-          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
+          className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-brand-500"
         >
           <option value="">전체 시즌</option>
           {seasons.map((season) => (
@@ -151,7 +151,7 @@ export default function TeacherProblems() {
             </option>
           ))}
         </select>
-        <Link to="/teacher/seasons" className="text-sm text-indigo-600 hover:text-indigo-800">
+        <Link to="/teacher/seasons" className="text-sm text-brand-600 hover:text-brand-800">
           시즌 관리 →
         </Link>
       </div>
@@ -162,7 +162,7 @@ export default function TeacherProblems() {
         </p>
       )}
 
-      {state.status === 'loading' && <p className="mt-4 text-slate-500">불러오는 중입니다…</p>}
+      {state.status === 'loading' && <p className="mt-4 text-stone-500">불러오는 중입니다…</p>}
 
       {state.status === 'error' && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -188,7 +188,7 @@ export default function TeacherProblems() {
       )}
 
       {state.status === 'ready' && seasons.length > 0 && visibleProblems.length === 0 && (
-        <p className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+        <p className="mt-4 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
           {seasonFilter === ''
             ? '등록된 문제가 없습니다. "새 문제" 버튼으로 첫 문제를 만들어 보세요.'
             : '이 시즌에는 아직 문제가 없습니다.'}
@@ -200,26 +200,26 @@ export default function TeacherProblems() {
           {visibleProblems.map((problem) => (
             <li
               key={problem.id}
-              className="rounded-lg border border-slate-200 bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4"
+              className="rounded-lg border border-stone-200 bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">#{problem.order_index}</span>
+                  <span className="text-xs text-stone-400">#{problem.order_index}</span>
                   <span
                     className={
                       problem.is_published
                         ? 'rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700'
-                        : 'rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500'
+                        : 'rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500'
                     }
                   >
                     {problem.is_published ? '공개' : '비공개'}
                   </span>
-                  <span className="truncate rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                  <span className="truncate rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
                     {seasonNameOf(problem)}
                   </span>
                 </div>
-                <p className="mt-1 truncate font-medium text-slate-900"><MathText text={problem.title} /></p>
-                <p className="mt-0.5 truncate text-xs text-slate-500">
+                <p className="mt-1 truncate font-medium text-stone-900"><MathText text={problem.title} /></p>
+                <p className="mt-0.5 truncate text-xs text-stone-500">
                   정답 {problem.answers.length}개: {problem.answers.join(' / ')}
                 </p>
               </div>
@@ -229,13 +229,13 @@ export default function TeacherProblems() {
                   type="button"
                   onClick={() => void togglePublished(problem)}
                   disabled={busyProblemId === problem.id}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {problem.is_published ? '비공개로' : '공개로'}
                 </button>
                 <Link
                   to={`/teacher/problems/${problem.id}`}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
                 >
                   수정
                 </Link>

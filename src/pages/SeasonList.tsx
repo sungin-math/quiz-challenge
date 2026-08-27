@@ -35,9 +35,9 @@ export default function SeasonList() {
 
   return (
     <Layout>
-      <h1 className="text-xl font-bold text-slate-900">시즌을 고르세요</h1>
+      <h1 className="text-xl font-bold text-stone-900">시즌을 고르세요</h1>
 
-      {state.status === 'loading' && <p className="mt-4 text-slate-500">불러오는 중입니다…</p>}
+      {state.status === 'loading' && <p className="mt-4 text-stone-500">불러오는 중입니다…</p>}
 
       {state.status === 'error' && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
@@ -53,7 +53,7 @@ export default function SeasonList() {
       )}
 
       {state.status === 'ready' && state.value.length === 0 && (
-        <p className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+        <p className="mt-4 rounded-lg border border-stone-200 bg-white p-6 text-center text-sm text-stone-500">
           아직 공개된 시즌이 없습니다. 선생님이 시즌을 열면 여기에 표시됩니다.
         </p>
       )}
@@ -66,11 +66,11 @@ export default function SeasonList() {
               <li key={season.season_id}>
                 <Link
                   to={`/seasons/${season.season_id}`}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-4 hover:border-indigo-300 hover:bg-indigo-50"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white px-4 py-4 hover:border-brand-300 hover:bg-brand-50"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium text-slate-900">{season.name}</span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block truncate font-medium text-stone-900">{season.name}</span>
+                    <span className="block text-xs text-stone-500">
                       {season.total_problems === 0
                         ? '아직 공개된 문제가 없습니다'
                         : `${season.total_problems}문제 중 ${season.solved_count}문제 정답`}
@@ -80,7 +80,7 @@ export default function SeasonList() {
                     className={
                       isComplete
                         ? 'shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700'
-                        : 'shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600'
+                        : 'shrink-0 rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-stone-600'
                     }
                   >
                     {isComplete ? '완료 ✓' : `${season.solved_count}/${season.total_problems}`}

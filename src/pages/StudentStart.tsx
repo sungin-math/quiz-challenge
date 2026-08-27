@@ -70,9 +70,19 @@ export default function StudentStart() {
   return (
     <Layout>
       <div className="space-y-6">
-        <section>
-          <h1 className="text-2xl font-bold text-slate-900">문제풀이 챌린지</h1>
-          <p className="mt-1 text-sm text-slate-600">
+        {/* 첫 화면에서만 로고를 크게 보여준다. 나머지 화면은 헤더의 작은 로고로 충분하다. */}
+        <section className="rounded-2xl border border-stone-200 bg-white px-6 py-8 text-center">
+          <img
+            src="/logo-mark.png"
+            alt=""
+            aria-hidden="true"
+            className="mx-auto h-20 w-20"
+            width={1330}
+            height={1330}
+          />
+          <h1 className="mt-4 text-2xl font-bold text-stone-900">문제풀이 챌린지</h1>
+          <p className="mt-1 text-sm font-medium text-brand-700">강성인 수학</p>
+          <p className="mx-auto mt-3 max-w-md text-sm text-stone-600">
             이름만 입력하면 바로 시작할 수 있습니다. 답을 제출하면 즉시 채점됩니다.
           </p>
         </section>
@@ -84,14 +94,14 @@ export default function StudentStart() {
         )}
 
         {student && (
-          <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-            <p className="text-sm text-indigo-900">
+          <section className="rounded-lg border border-brand-200 bg-brand-50 p-4">
+            <p className="text-sm text-brand-900">
               <span className="font-semibold">{displayName(student)}</span> 님의 진행 기록이 있습니다.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
                 to="/seasons"
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
               >
                 이어서 풀기
               </Link>
@@ -102,7 +112,7 @@ export default function StudentStart() {
                   setNickname('');
                   setErrorMessage(null);
                 }}
-                className="rounded-md border border-indigo-300 bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+                className="rounded-md border border-brand-300 bg-white px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
               >
                 다른 이름으로 시작
               </button>
@@ -111,8 +121,8 @@ export default function StudentStart() {
         )}
 
         {!student && (
-          <form onSubmit={handleStart} className="rounded-lg border border-slate-200 bg-white p-4">
-            <label htmlFor="nickname" className="block text-sm font-medium text-slate-700">
+          <form onSubmit={handleStart} className="rounded-lg border border-stone-200 bg-white p-4">
+            <label htmlFor="nickname" className="block text-sm font-medium text-stone-700">
               이름
             </label>
             <input
@@ -123,25 +133,25 @@ export default function StudentStart() {
               maxLength={20}
               autoComplete="off"
               placeholder="예: 김민수"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
-            <p className="mt-1 text-xs text-slate-500">1~20자. 같은 이름이 있어도 괜찮습니다.</p>
+            <p className="mt-1 text-xs text-stone-500">1~20자. 같은 이름이 있어도 괜찮습니다.</p>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-3 w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="mt-3 w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300"
             >
               {isSubmitting ? '시작하는 중…' : '시작하기'}
             </button>
           </form>
         )}
 
-        <details className="rounded-lg border border-slate-200 bg-white p-4">
-          <summary className="cursor-pointer text-sm font-medium text-slate-700">
+        <details className="rounded-lg border border-stone-200 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-medium text-stone-700">
             이어하기 코드가 있나요?
           </summary>
           <form onSubmit={handleResume} className="mt-3">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-stone-500">
               전에 쓰던 기기의 <span className="font-medium">내 기록</span> 화면에서 복사한 코드를 붙여넣으면
               풀던 기록을 그대로 이어갈 수 있습니다.
             </p>
@@ -152,19 +162,19 @@ export default function StudentStart() {
               autoComplete="off"
               spellCheck={false}
               placeholder="00000000-0000-0000-0000-000000000000"
-              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="mt-2 w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
             <button
               type="submit"
-              className="mt-3 w-full rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="mt-3 w-full rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
             >
               코드로 이어하기
             </button>
           </form>
         </details>
 
-        <p className="text-center text-xs text-slate-400">
-          <Link to="/teacher/login" className="hover:text-slate-600">
+        <p className="text-center text-xs text-stone-400">
+          <Link to="/teacher/login" className="hover:text-stone-600">
             선생님 로그인
           </Link>
         </p>
