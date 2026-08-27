@@ -48,7 +48,7 @@ export default function ProblemSolve() {
   }, [load]);
 
   if (!student) return <Navigate to="/" replace />;
-  if (!problemId) return <Navigate to="/problems" replace />;
+  if (!problemId) return <Navigate to="/seasons" replace />;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -105,9 +105,13 @@ export default function ProblemSolve() {
 
   const isSolved = feedback.kind === 'correct' || feedback.kind === 'already';
 
+  // 문제를 아직 못 불러왔으면 어느 시즌인지 알 수 없으므로 시즌 목록으로 보낸다.
+  const backTo =
+    state.status === 'ready' && state.value !== null ? `/seasons/${state.value.season_id}` : '/seasons';
+
   return (
     <Layout>
-      <Link to="/problems" className="text-sm text-slate-500 hover:text-slate-800">
+      <Link to={backTo} className="text-sm text-slate-500 hover:text-slate-800">
         ← 문제 목록
       </Link>
 
@@ -203,7 +207,7 @@ export default function ProblemSolve() {
 
           {isSolved && (
             <Link
-              to="/problems"
+              to={backTo}
               className="mt-4 inline-block rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               다른 문제 풀러 가기

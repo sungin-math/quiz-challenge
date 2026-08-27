@@ -89,6 +89,7 @@ export default function TeacherStats() {
                 <table className="w-full min-w-[36rem] text-sm">
                   <thead className="bg-slate-50 text-left text-xs text-slate-500">
                     <tr>
+                      <th className="px-3 py-2 font-medium">시즌</th>
                       <th className="px-3 py-2 font-medium">제목</th>
                       <th className="px-3 py-2 font-medium">공개</th>
                       <th className="px-3 py-2 text-right font-medium">시도 수</th>
@@ -99,6 +100,7 @@ export default function TeacherStats() {
                   <tbody>
                     {state.value.problems.map((row) => (
                       <tr key={row.problem_id} className="border-t border-slate-100">
+                        <td className="max-w-[10rem] truncate px-3 py-2 text-slate-500">{row.season_name}</td>
                         <td className="max-w-[16rem] truncate px-3 py-2 text-slate-900">{row.title}</td>
                         <td className="px-3 py-2 text-slate-500">{row.is_published ? '공개' : '비공개'}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{row.total_attempts}</td>

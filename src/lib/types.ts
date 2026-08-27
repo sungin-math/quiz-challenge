@@ -12,6 +12,7 @@ export type LoadState<T> =
 /** problems 테이블 한 행. answers 가 들어 있으므로 선생님 화면에서만 쓴다. */
 export type Problem = {
   id: string;
+  season_id: string;
   title: string;
   body: string;
   /** storage 의 problem-images 버킷 안 파일 경로. 이미지가 없으면 null. */
@@ -30,6 +31,27 @@ export type ProblemSummary = {
   title: string;
   body: string;
   image_path: string | null;
+  season_id: string;
+  season_name: string;
+}
+
+/** seasons 테이블 한 행. 선생님 화면에서만 쓴다. */
+export type Season = {
+  id: string;
+  name: string;
+  is_published: boolean;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** get_seasons_with_progress RPC 결과 한 행. 학생이 보는 시즌 목록. */
+export type SeasonProgressRow = {
+  season_id: string;
+  name: string;
+  order_index: number;
+  total_problems: number;
+  solved_count: number;
 }
 
 /** get_problems_with_progress RPC 결과 한 행. */
@@ -61,6 +83,8 @@ export type StudentStats = {
 export type ProblemStats = {
   problem_id: string;
   title: string;
+  season_id: string;
+  season_name: string;
   is_published: boolean;
   order_index: number;
   total_attempts: number;
@@ -82,10 +106,17 @@ export interface Database {
         Update: { id?: string; email?: string; created_at?: string };
         Relationships: [];
       };
+      seasons: {
+        Row: Season;
+        Insert: { id?: string; name: string; is_published?: boolean; order_index?: number };
+        Update: { name?: string; is_published?: boolean; order_index?: number };
+        Relationships: [];
+      };
       problems: {
         Row: Problem;
         Insert: {
           id?: string;
+          season_id: string;
           title: string;
           body?: string;
           answers: string[];
@@ -95,6 +126,7 @@ export interface Database {
           image_path?: string | null;
         };
         Update: {
+          season_id?: string;
           title?: string;
           body?: string;
           answers?: string[];
@@ -135,7 +167,11 @@ export interface Database {
     };
     Functions: {
       start_session: { Args: { p_nickname: string }; Returns: string };
-      get_problems_with_progress: { Args: { p_student_id: string }; Returns: ProgressRow[] };
+      get_seasons_with_progress: { Args: { p_student_id: string }; Returns: SeasonProgressRow[] };
+      get_problems_with_progress: {
+        Args: { p_student_id: string; p_season_id: string };
+        Returns: ProgressRow[];
+      };
       get_problem: { Args: { p_problem_id: string }; Returns: ProblemSummary[] };
       submit_answer: {
         Args: { p_student_id: string; p_problem_id: string; p_answer: string };

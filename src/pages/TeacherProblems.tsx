@@ -1,33 +1,50 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { MathText } from '../components/MathText';
 import { removeProblemImage } from '../lib/images';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
-import type { LoadState, Problem } from '../lib/types';
+import type { LoadState, Problem, Season } from '../lib/types';
+
+/** 문제와 시즌을 함께 들고 있어야 목록에 시즌 이름을 붙일 수 있다. */
+type Loaded = { problems: Problem[]; seasons: Season[] };
 
 export default function TeacherProblems() {
   const navigate = useNavigate();
-  const [state, setState] = useState<LoadState<Problem[]>>({ status: 'loading' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const seasonFilter = searchParams.get('season') ?? '';
+  const [state, setState] = useState<LoadState<Loaded>>({ status: 'loading' });
   const [busyProblemId, setBusyProblemId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     setState({ status: 'loading' });
 
-    const { data, error } = await supabase
-      .from('problems')
-      .select('*')
-      .order('order_index', { ascending: true })
-      .order('created_at', { ascending: true })
-      .returns<Problem[]>();
+    const [problemsResult, seasonsResult] = await Promise.all([
+      supabase
+        .from('problems')
+        .select('*')
+        .order('order_index', { ascending: true })
+        .order('created_at', { ascending: true })
+        .returns<Problem[]>(),
+      supabase
+        .from('seasons')
+        .select('*')
+        .order('order_index', { ascending: true })
+        .order('created_at', { ascending: true })
+        .returns<Season[]>(),
+    ]);
 
+    const error = problemsResult.error ?? seasonsResult.error;
     if (error) {
       setState({ status: 'error', message: toUserMessage(error) });
       return;
     }
-    setState({ status: 'ready', value: data ?? [] });
+    setState({
+      status: 'ready',
+      value: { problems: problemsResult.data ?? [], seasons: seasonsResult.data ?? [] },
+    });
   }, []);
 
   useEffect(() => {
@@ -84,13 +101,21 @@ export default function TeacherProblems() {
     navigate('/teacher/login', { replace: true });
   }
 
+  const seasons = state.status === 'ready' ? state.value.seasons : [];
+  const visibleProblems =
+    state.status === 'ready'
+      ? state.value.problems.filter((problem) => seasonFilter === '' || problem.season_id === seasonFilter)
+      : [];
+  const seasonNameOf = (problem: Problem): string =>
+    seasons.find((season) => season.id === problem.season_id)?.name ?? '(시즌 없음)';
+
   return (
     <Layout>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-slate-900">문제 관리</h1>
         <div className="flex gap-2">
           <Link
-            to="/teacher/problems/new"
+            to={seasonFilter === '' ? '/teacher/problems/new' : `/teacher/problems/new?season=${seasonFilter}`}
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
           >
             새 문제
@@ -103,6 +128,32 @@ export default function TeacherProblems() {
             로그아웃
           </button>
         </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label htmlFor="seasonFilter" className="text-sm text-slate-600">
+          시즌
+        </label>
+        <select
+          id="seasonFilter"
+          value={seasonFilter}
+          onChange={(event) => {
+            const next = event.target.value;
+            setSearchParams(next === '' ? {} : { season: next }, { replace: true });
+          }}
+          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500"
+        >
+          <option value="">전체 시즌</option>
+          {seasons.map((season) => (
+            <option key={season.id} value={season.id}>
+              {season.name}
+              {season.is_published ? '' : ' (비공개)'}
+            </option>
+          ))}
+        </select>
+        <Link to="/teacher/seasons" className="text-sm text-indigo-600 hover:text-indigo-800">
+          시즌 관리 →
+        </Link>
       </div>
 
       {actionError && (
@@ -126,15 +177,27 @@ export default function TeacherProblems() {
         </div>
       )}
 
-      {state.status === 'ready' && state.value.length === 0 && (
-        <p className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-          등록된 문제가 없습니다. "새 문제" 버튼으로 첫 문제를 만들어 보세요.
+      {state.status === 'ready' && seasons.length === 0 && (
+        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-800">
+          아직 시즌이 없습니다. 문제는 시즌에 속해야 하므로{' '}
+          <Link to="/teacher/seasons" className="font-medium underline">
+            시즌 관리
+          </Link>
+          에서 먼저 시즌을 만들어 주세요.
         </p>
       )}
 
-      {state.status === 'ready' && state.value.length > 0 && (
+      {state.status === 'ready' && seasons.length > 0 && visibleProblems.length === 0 && (
+        <p className="mt-4 rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+          {seasonFilter === ''
+            ? '등록된 문제가 없습니다. "새 문제" 버튼으로 첫 문제를 만들어 보세요.'
+            : '이 시즌에는 아직 문제가 없습니다.'}
+        </p>
+      )}
+
+      {state.status === 'ready' && visibleProblems.length > 0 && (
         <ul className="mt-4 space-y-2">
-          {state.value.map((problem) => (
+          {visibleProblems.map((problem) => (
             <li
               key={problem.id}
               className="rounded-lg border border-slate-200 bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4"
@@ -150,6 +213,9 @@ export default function TeacherProblems() {
                     }
                   >
                     {problem.is_published ? '공개' : '비공개'}
+                  </span>
+                  <span className="truncate rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                    {seasonNameOf(problem)}
                   </span>
                 </div>
                 <p className="mt-1 truncate font-medium text-slate-900"><MathText text={problem.title} /></p>

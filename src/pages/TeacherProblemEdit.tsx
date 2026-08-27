@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { MathText } from '../components/MathText';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
 import { IMAGE_ACCEPT, problemImageUrl, removeProblemImage, uploadProblemImage } from '../lib/images';
-import type { Problem } from '../lib/types';
+import type { Problem, Season } from '../lib/types';
 
 /** 기존 문제를 불러오는 동안의 상태. 새 문제는 불러올 것이 없으므로 곧바로 ready. */
 type EditorState =
@@ -32,6 +32,7 @@ export default function TeacherProblemEdit() {
   const { id } = useParams<{ id: string }>();
   const isNew = id === 'new';
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [editorState, setEditorState] = useState<EditorState>(isNew ? { status: 'ready' } : { status: 'loading' });
   const [title, setTitle] = useState('');
@@ -50,10 +51,34 @@ export default function TeacherProblemEdit() {
    * 미리 지워버리면 멀쩡한 문제의 그림이 깨진다.
    */
   const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [seasonId, setSeasonId] = useState('');
 
   const load = useCallback(async (): Promise<void> => {
-    if (!id || id === 'new') return;
     setEditorState({ status: 'loading' });
+
+    const seasonsResult = await supabase
+      .from('seasons')
+      .select('*')
+      .order('order_index', { ascending: true })
+      .order('created_at', { ascending: true })
+      .returns<Season[]>();
+
+    if (seasonsResult.error) {
+      setEditorState({ status: 'error', message: toUserMessage(seasonsResult.error) });
+      return;
+    }
+    const seasonList = seasonsResult.data ?? [];
+    setSeasons(seasonList);
+
+    if (!id || id === 'new') {
+      // 목록에서 시즌을 걸러 보던 중이었다면 그 시즌을 골라둔다.
+      const requested = searchParams.get('season');
+      const preselected = seasonList.find((season) => season.id === requested) ?? seasonList[0];
+      setSeasonId(preselected?.id ?? '');
+      setEditorState({ status: 'ready' });
+      return;
+    }
 
     const { data, error } = await supabase
       .from('problems')
@@ -73,6 +98,7 @@ export default function TeacherProblemEdit() {
       return;
     }
 
+    setSeasonId(problem.season_id);
     setTitle(problem.title);
     setBody(problem.body);
     setAnswersText(problem.answers.join('\n'));
@@ -80,7 +106,7 @@ export default function TeacherProblemEdit() {
     setOrderIndex(String(problem.order_index));
     setImagePath(problem.image_path ?? null);
     setEditorState({ status: 'ready' });
-  }, [id]);
+  }, [id, searchParams]);
 
   useEffect(() => {
     void load();
@@ -116,6 +142,11 @@ export default function TeacherProblemEdit() {
     event.preventDefault();
     setSaveError(null);
 
+    if (seasonId === '') {
+      setSaveError('시즌을 선택해 주세요. 시즌이 없다면 먼저 "시즌 관리" 에서 만들어야 합니다.');
+      return;
+    }
+
     const trimmedTitle = title.trim();
     if (trimmedTitle.length < 1 || trimmedTitle.length > 200) {
       setSaveError('제목은 1~200자로 입력해 주세요.');
@@ -149,6 +180,7 @@ export default function TeacherProblemEdit() {
       }
 
       const { error } = await supabase.from('problems').insert({
+        season_id: seasonId,
         title: trimmedTitle,
         body,
         answers,
@@ -177,6 +209,7 @@ export default function TeacherProblemEdit() {
     const { error } = await supabase
       .from('problems')
       .update({
+        season_id: seasonId,
         title: trimmedTitle,
         body,
         answers,
@@ -231,6 +264,38 @@ export default function TeacherProblemEdit() {
 
       {editorState.status === 'ready' && (
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <label htmlFor="season" className="block text-sm font-medium text-slate-700">
+              시즌
+            </label>
+            {seasons.length === 0 ? (
+              <p className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                시즌이 하나도 없습니다.{' '}
+                <Link to="/teacher/seasons" className="font-medium underline">
+                  시즌 관리
+                </Link>
+                에서 먼저 만들어 주세요.
+              </p>
+            ) : (
+              <select
+                id="season"
+                value={seasonId}
+                onChange={(event) => setSeasonId(event.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-base outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              >
+                {seasons.map((season) => (
+                  <option key={season.id} value={season.id}>
+                    {season.name}
+                    {season.is_published ? '' : ' (비공개 시즌)'}
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="mt-1 text-xs text-slate-500">
+              공개된 시즌의 공개된 문제만 학생에게 보입니다. 시즌을 바꾸면 학생들의 제출 기록은 그대로 따라갑니다.
+            </p>
+          </div>
+
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <label htmlFor="title" className="block text-sm font-medium text-slate-700">
               제목 (문제 질문)

@@ -44,7 +44,7 @@ export default function StudentStart() {
       setErrorMessage(toUserMessage(storageError));
       return;
     }
-    navigate('/problems');
+    navigate('/seasons');
   }
 
   function handleResume(event: FormEvent<HTMLFormElement>): void {
@@ -64,7 +64,7 @@ export default function StudentStart() {
       setErrorMessage(toUserMessage(storageError));
       return;
     }
-    navigate('/problems');
+    navigate('/seasons');
   }
 
   return (
@@ -90,7 +90,7 @@ export default function StudentStart() {
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                to="/problems"
+                to="/seasons"
                 className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
               >
                 이어서 풀기

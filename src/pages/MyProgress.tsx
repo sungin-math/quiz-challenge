@@ -4,22 +4,23 @@ import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
 import { clearStudent, displayName, useStudent } from '../lib/session';
-import type { LoadState, ProgressRow } from '../lib/types';
+import type { LoadState, SeasonProgressRow } from '../lib/types';
 
 export default function MyProgress() {
   const student = useStudent();
   const studentId = student?.id ?? null;
   const navigate = useNavigate();
 
-  const [state, setState] = useState<LoadState<ProgressRow[]>>({ status: 'loading' });
+  const [state, setState] = useState<LoadState<SeasonProgressRow[]>>({ status: 'loading' });
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     if (!studentId) return;
     setState({ status: 'loading' });
 
-    const { data, error } = await supabase
-      .rpc('get_problems_with_progress', { p_student_id: studentId });
+    const { data, error } = await supabase.rpc('get_seasons_with_progress', {
+      p_student_id: studentId,
+    });
 
     if (error) {
       setState({ status: 'error', message: toUserMessage(error) });
@@ -44,8 +45,10 @@ export default function MyProgress() {
     }
   }
 
-  const solvedCount = state.status === 'ready' ? state.value.filter((row) => row.solved).length : 0;
-  const totalCount = state.status === 'ready' ? state.value.length : 0;
+  // 전체 합계는 모든 시즌을 더한 값이다. 이름과 기록은 시즌을 넘어 하나로 유지된다.
+  const seasons = state.status === 'ready' ? state.value : [];
+  const solvedCount = seasons.reduce((sum, season) => sum + season.solved_count, 0);
+  const totalCount = seasons.reduce((sum, season) => sum + season.total_problems, 0);
 
   return (
     <Layout>
@@ -77,7 +80,7 @@ export default function MyProgress() {
                 {solvedCount}
                 <span className="text-xl font-medium text-slate-400"> / {totalCount}</span>
               </p>
-              <p className="mt-1 text-sm text-slate-600">맞힌 문제 수</p>
+              <p className="mt-1 text-sm text-slate-600">전체 시즌에서 맞힌 문제 수</p>
               <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   className="h-full rounded-full bg-indigo-500 transition-all"
@@ -89,10 +92,33 @@ export default function MyProgress() {
         </section>
       )}
 
+      {state.status === 'ready' && seasons.length > 0 && (
+        <section className="mt-4">
+          <h2 className="text-sm font-medium text-slate-700">시즌별 진행률</h2>
+          <ul className="mt-2 space-y-2">
+            {seasons.map((season) => (
+              <li key={season.season_id}>
+                <Link
+                  to={`/seasons/${season.season_id}`}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 hover:border-indigo-300 hover:bg-indigo-50"
+                >
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
+                    {season.name}
+                  </span>
+                  <span className="shrink-0 text-sm text-slate-600">
+                    {season.solved_count} / {season.total_problems}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-sm font-medium text-slate-700">이어하기 코드</h2>
         <p className="mt-1 text-xs text-slate-500">
-          다른 기기에서 이어서 풀거나, 브라우저 기록을 지운 뒤 복구할 때 필요합니다. 남에게 알려주지 마세요.
+          다른 기기에서 이어서 풀거나, 브라우저 기록을 지운 뒤 복구할 때 필요합니다. 모든 시즌에서 같은 코드를 씁니다. 남에게 알려주지 마세요.
         </p>
         <p className="mt-2 break-all rounded-md bg-slate-50 px-3 py-2 font-mono text-sm text-slate-800">
           {student.id}
@@ -109,7 +135,7 @@ export default function MyProgress() {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
-          to="/problems"
+          to="/seasons"
           className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
           문제 풀러 가기

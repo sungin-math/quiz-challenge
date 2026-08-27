@@ -30,6 +30,9 @@ export default function Layout({ children }: LayoutProps) {
                 <Link to="/teacher" className="text-slate-600 hover:text-slate-900">
                   문제 관리
                 </Link>
+                <Link to="/teacher/seasons" className="text-slate-600 hover:text-slate-900">
+                  시즌 관리
+                </Link>
                 <Link to="/teacher/stats" className="text-slate-600 hover:text-slate-900">
                   통계
                 </Link>
@@ -37,8 +40,8 @@ export default function Layout({ children }: LayoutProps) {
             ) : (
               student && (
                 <>
-                  <Link to="/problems" className="text-slate-600 hover:text-slate-900">
-                    문제 목록
+                  <Link to="/seasons" className="text-slate-600 hover:text-slate-900">
+                    시즌 목록
                   </Link>
                   <Link to="/me" className="text-slate-600 hover:text-slate-900">
                     내 기록

@@ -19,7 +19,7 @@
 
 | 항목 | 결정 |
 | --- | --- |
-| 반 / 회차 구분 | 없음 |
+| 반 / 회차 구분 | 시즌으로 구분. 문제는 시즌 하나에 속한다 (반 구분은 여전히 없음) |
 | 동명이인 | 허용 (이름은 식별자가 아님) |
 | 오답 재시도 | 무제한. 단 분당 30회 속도 제한 |
 | 리더보드 | 없음 |
@@ -33,7 +33,8 @@
 1. **정답 보호 = Postgres RPC (`security definer`)**
    Netlify Functions나 Supabase Edge Function을 쓰지 않습니다. `service_role` 키를 어디에도 두지 않습니다.
 2. **`anon` 역할은 테이블 직접 접근 권한이 전혀 없습니다.**
-   학생 화면은 RPC 4개만 호출합니다: `start_session`, `get_problems_with_progress`, `get_problem`, `submit_answer`.
+   학생 화면은 RPC 5개만 호출합니다: `start_session`, `get_seasons_with_progress`,
+   `get_problems_with_progress`, `get_problem`, `submit_answer`.
 3. **학생 식별 = localStorage에 저장한 `students.id` UUID.**
    기기를 바꾸거나 브라우저 저장소를 지우면 이어서 풀 수 있도록 시작 화면에 "이어하기 코드"(= 그 UUID) 입력란을 둡니다.
 4. **복수 정답 허용** (`answers text[]`).
@@ -53,6 +54,13 @@
    학생은 로그인이 없으므로 읽기는 공개여야 한다. 파일 이름이 랜덤 UUID 라 주소를 모르면
    접근할 수 없고, 애초에 공개 문제의 본문 그림이므로 공개돼도 문제되지 않는다.
    **정답은 그림이 아니라 DB 에 있다는 원칙은 그대로다.** 업로드·삭제는 선생님만 가능하다.
+10. **시즌 = 문제를 묶는 단위. 학생 정체성은 시즌과 무관하다.**
+    문제는 시즌 하나에 속한다 (`problems.season_id`, `on delete cascade`).
+    학생은 이름을 한 번만 입력하고 이어하기 코드도 하나다 — `students` 테이블은 건드리지 않았다.
+    진행률만 시즌별로 집계한다.
+    **공개 판정은 두 단계다: 시즌이 공개이고 + 문제가 공개일 때만 학생에게 보인다.**
+    조회(`get_problem`)뿐 아니라 채점(`submit_answer`)에서도 같은 조건을 건다 —
+    조회만 막으면 주소를 아는 학생이 계속 답을 제출할 수 있기 때문이다.
 
 ---
 
@@ -272,6 +280,21 @@ grant execute on function public.start_session(text),
 - `problem-images` 버킷 생성 (`public = true`), 5MB · 이미지 MIME 만 허용하도록 버킷에 제한 설정
 - `storage.objects` 에 정책 하나: 이 버킷에 대한 쓰기는 `public.is_teacher()` 인 계정만
 
+### `supabase/06_seasons.sql`
+
+문제를 시즌별로 묶기 위해 덧씌운 변경분. 01~05 를 실행한 프로젝트에 그대로 실행한다.
+
+- `seasons` 테이블 (`name`, `is_published`, `order_index`) + RLS. 선생님만 읽고 쓴다.
+- `problems.season_id` 추가 → **기존 문제를 '기본' 시즌으로 이관** → `set not null`.
+  이관은 `do $$ ... $$` 블록 안에서 하며, 이미 옮겨진 상태면 아무 일도 하지 않는다.
+- `get_seasons_with_progress(p_student_id)` 신규 — 시즌 목록 + 시즌별 진행률
+- `get_problems_with_progress` 는 인자가 `(p_student_id, p_season_id)` 로 늘어 **drop 후 재생성**
+- `get_problem` · `submit_answer` 에 시즌 공개 조건 추가
+- `teacher_problem_stats` 뷰에 `season_id` · `season_name` 추가 (drop 후 재생성 + 재grant)
+
+> 인자나 반환 타입이 바뀌는 함수는 `create or replace` 로 못 고친다. `drop` 이 필요하고,
+> **drop 하면 실행 권한이 사라지므로 `grant execute` 를 반드시 다시 해준다.**
+
 ---
 
 ## 5. 폴더 구조 (이대로. 더 만들지 않는다)
@@ -287,7 +310,7 @@ tsconfig.node.json
 vite.config.ts
 README.md
 PLAN.md
-supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql
+supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql  06_seasons.sql
 src/
   main.tsx              # createRoot + BrowserRouter
   App.tsx               # 라우트 정의만
@@ -306,11 +329,13 @@ src/
     RequireTeacher.tsx  # Auth 세션 + teachers 본인 행 확인, 실패 시 /teacher/login
   pages/
     StudentStart.tsx        "/"                      이름 입력 → start_session. 기존 세션 있으면 "이어서 풀기". 이어하기 코드 입력란
-    ProblemList.tsx         "/problems"              get_problems_with_progress. 푼 문제 체크 표시
+    SeasonList.tsx          "/seasons"               get_seasons_with_progress. 시즌별 진행률
+    ProblemList.tsx         "/seasons/:seasonId"     get_problems_with_progress. 그 시즌의 문제만
     ProblemSolve.tsx        "/problems/:id"          get_problem + submit_answer. 정답/오답 즉시 피드백
     MyProgress.tsx          "/me"                    맞춘 수/전체, 이어하기 코드 표시(복사 버튼)
     TeacherLogin.tsx        "/teacher/login"         signInWithPassword
-    TeacherProblems.tsx     "/teacher"               목록·공개토글·삭제
+    TeacherSeasons.tsx      "/teacher/seasons"       시즌 생성·이름수정·공개토글·삭제
+    TeacherProblems.tsx     "/teacher"               목록·공개토글·삭제. ?season= 로 시즌 필터
     TeacherProblemEdit.tsx  "/teacher/problems/:id"  :id === "new" 면 등록, 아니면 수정
     TeacherStats.tsx        "/teacher/stats"         teacher_student_stats + teacher_problem_stats 조회
 ```
