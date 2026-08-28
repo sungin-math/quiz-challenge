@@ -257,8 +257,11 @@ begin
   end if;
 end $fn$;
 
+-- anon 을 따로 적는 이유: Supabase 는 public 스키마의 새 함수에 anon·authenticated 의
+-- EXECUTE 를 기본 권한으로 붙여 준다. PUBLIC 에서만 회수하면 anon 에게 직접 붙은 권한이 남는다.
+-- 함수 안의 is_teacher() 검사가 이미 막고 있지만, 애초에 호출조차 못 하게 한 겹 더 둔다.
 revoke all on function public.teacher_create_student(text, text, text, text, text),
-                       public.teacher_set_student_password(uuid, text) from public;
+                       public.teacher_set_student_password(uuid, text) from public, anon;
 grant execute on function public.teacher_create_student(text, text, text, text, text),
                           public.teacher_set_student_password(uuid, text) to authenticated;
 
