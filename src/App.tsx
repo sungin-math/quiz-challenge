@@ -9,6 +9,7 @@ import MyProgress from './pages/MyProgress';
 import TeacherLogin from './pages/TeacherLogin';
 import TeacherSeasons from './pages/TeacherSeasons';
 import TeacherProblems from './pages/TeacherProblems';
+import TeacherStudents from './pages/TeacherStudents';
 import TeacherProblemEdit from './pages/TeacherProblemEdit';
 import TeacherStats from './pages/TeacherStats';
 
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/teacher" element={<TeacherProblems />} />
         <Route path="/teacher/seasons" element={<TeacherSeasons />} />
         <Route path="/teacher/problems/:id" element={<TeacherProblemEdit />} />
+        <Route path="/teacher/students" element={<TeacherStudents />} />
         <Route path="/teacher/stats" element={<TeacherStats />} />
       </Route>
 

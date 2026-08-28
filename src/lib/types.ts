@@ -69,10 +69,49 @@ export type SubmitResult = {
   already_solved: boolean;
 }
 
+/**
+ * students 테이블 한 행 중 선생님 화면이 읽을 수 있는 컬럼만.
+ * password_hash 는 컬럼 단위 권한으로 막혀 있어 select 에 넣으면 42501 이 난다.
+ */
+export type Student = {
+  id: string;
+  name: string;
+  school: string;
+  grade: string;
+  class_name: string;
+  is_active: boolean;
+  created_at: string;
+  last_seen_at: string;
+}
+
+/** 선생님 화면에서 students 를 조회할 때 쓰는 컬럼 목록. */
+export const STUDENT_COLUMNS = 'id, name, school, grade, class_name, is_active, created_at, last_seen_at';
+
+/**
+ * student_login RPC 결과.
+ * 로그인 실패를 예외로 던지면 "몇 번 틀렸는지" 기록까지 롤백되므로 ok 플래그로 돌려받는다.
+ */
+export type StudentLoginResult = {
+  ok: boolean;
+  message: string;
+  student_id: string | null;
+  student_name: string | null;
+}
+
+/** student_profile RPC 결과. 계정이 지워졌거나 사용 중지면 0행이 온다. */
+export type StudentProfileRow = {
+  student_id: string;
+  student_name: string;
+}
+
 /** teacher_student_stats 뷰 한 행. */
 export type StudentStats = {
   student_id: string;
-  nickname: string;
+  name: string;
+  school: string;
+  grade: string;
+  class_name: string;
+  is_active: boolean;
   created_at: string;
   last_seen_at: string;
   attempt_count: number;
@@ -110,7 +149,9 @@ export type SeasonStats = {
 export type StudentSeasonStats = {
   season_id: string;
   student_id: string;
-  nickname: string;
+  name: string;
+  grade: string;
+  class_name: string;
   attempt_count: number;
   solved_count: number;
   last_submitted_at: string | null;
@@ -161,9 +202,17 @@ export interface Database {
         Relationships: [];
       };
       students: {
-        Row: { id: string; nickname: string; created_at: string; last_seen_at: string };
-        Insert: { id?: string; nickname: string };
-        Update: { nickname?: string; last_seen_at?: string };
+        // 계정 생성은 teacher_create_student RPC 로만 한다 (비밀번호를 서버에서 해시해야 하므로).
+        // 그래서 Insert 는 never 다.
+        Row: Student;
+        Insert: never;
+        Update: {
+          name?: string;
+          school?: string;
+          grade?: string;
+          class_name?: string;
+          is_active?: boolean;
+        };
         Relationships: [];
       };
       submissions: {
@@ -192,7 +241,25 @@ export interface Database {
       teacher_student_season_stats: { Row: StudentSeasonStats; Relationships: [] };
     };
     Functions: {
-      start_session: { Args: { p_nickname: string }; Returns: string };
+      student_login: {
+        Args: { p_name: string; p_password: string };
+        Returns: StudentLoginResult[];
+      };
+      student_profile: { Args: { p_student_id: string }; Returns: StudentProfileRow[] };
+      teacher_create_student: {
+        Args: {
+          p_name: string;
+          p_school: string;
+          p_grade: string;
+          p_class_name: string;
+          p_password: string;
+        };
+        Returns: string;
+      };
+      teacher_set_student_password: {
+        Args: { p_student_id: string; p_password: string };
+        Returns: undefined;
+      };
       get_seasons_with_progress: { Args: { p_student_id: string }; Returns: SeasonProgressRow[] };
       get_problems_with_progress: {
         Args: { p_student_id: string; p_season_id: string };

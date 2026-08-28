@@ -22,8 +22,8 @@ function asSupabaseError(error: unknown): SupabaseErrorShape | null {
 
 /**
  * submit_answer 가 "세션이 유효하지 않습니다" 로 거절한 경우인지.
- * (localStorage 에 남아 있는 학생 id 가 DB 에 없을 때 — 잘못 입력한 이어하기 코드 등)
- * 이때는 저장된 세션을 지우고 시작 화면으로 돌려보내야 한다.
+ * (localStorage 에 남아 있는 학생 id 의 계정이 지워졌거나 사용 중지된 경우)
+ * 이때는 저장된 세션을 지우고 로그인 화면으로 돌려보내야 한다.
  */
 export function isInvalidSessionError(error: unknown): boolean {
   const supabaseError = asSupabaseError(error);
@@ -44,13 +44,17 @@ export function toUserMessage(error: unknown): string {
     case '42501':
       return '권한이 없습니다. 관리자 계정으로 로그인했는지 확인해 주세요.';
     case '23505':
+      // 학생 이름은 로그인 키라서 유일해야 한다. 겹치면 여기로 온다.
+      if (message.includes('students_name_key')) {
+        return '이미 같은 이름의 학생이 있습니다. 이름만으로 로그인하므로 구분되게 적어 주세요 (예: 김민수(중2)).';
+      }
       return '이미 처리된 내용입니다.';
     case '23514':
-      return '입력값이 규칙에 맞지 않습니다. 제목과 정답 개수를 확인해 주세요.';
+      return '입력값이 규칙에 맞지 않습니다. 글자 수와 정답 개수를 확인해 주세요.';
     case '22P02':
-      return '코드 형식이 올바르지 않습니다. 이어하기 코드를 다시 확인해 주세요.';
+      return '값의 형식이 올바르지 않습니다.';
     case 'PGRST202':
-      return '서버 함수를 찾을 수 없습니다. Supabase SQL Editor에서 01~07 스크립트를 순서대로 실행했는지 확인해 주세요.';
+      return '서버 함수를 찾을 수 없습니다. Supabase SQL Editor에서 01~08 스크립트를 순서대로 실행했는지 확인해 주세요.';
     case 'PGRST301':
       return '접근 권한이 없습니다. 다시 로그인해 주세요.';
     default:

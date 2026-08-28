@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { displayName, useStudent } from '../lib/session';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { clearStudent, displayName, useStudent } from '../lib/session';
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,6 +10,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const student = useStudent();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const isTeacherArea = pathname.startsWith('/teacher');
 
   return (
@@ -47,6 +48,9 @@ export default function Layout({ children }: LayoutProps) {
                 <Link to="/teacher/seasons" className="text-stone-600 hover:text-brand-700">
                   시즌 관리
                 </Link>
+                <Link to="/teacher/students" className="text-stone-600 hover:text-brand-700">
+                  학생 관리
+                </Link>
                 <Link to="/teacher/stats" className="text-stone-600 hover:text-brand-700">
                   통계
                 </Link>
@@ -61,6 +65,17 @@ export default function Layout({ children }: LayoutProps) {
                     내 기록
                   </Link>
                   <span className="hidden text-stone-400 sm:inline">{displayName(student)}</span>
+                  {/* 교실 공용 기기에서 다음 학생에게 넘길 수 있어야 한다. */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearStudent();
+                      navigate('/', { replace: true });
+                    }}
+                    className="text-stone-400 hover:text-brand-700"
+                  >
+                    로그아웃
+                  </button>
                 </>
               )
             )}

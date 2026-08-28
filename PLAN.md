@@ -6,7 +6,7 @@
 
 ## 1. 개요
 
-선생님이 단답형 문제를 등록하고, 학생이 링크로 들어와 **로그인 없이 이름만 입력**해 문제를 풀면 즉시 자동 채점되는 웹앱입니다.
+선생님이 단답형 문제를 등록하고, 학생이 **선생님에게 미리 받은 계정(이름 + 숫자 4자리)** 으로 로그인해 문제를 풀면 즉시 자동 채점되는 웹앱입니다.
 
 백엔드 서버 없이 **Vite + React 정적 SPA를 Netlify에 배포**하고, 데이터·인증·채점은 **Supabase**가 담당합니다.
 
@@ -19,8 +19,10 @@
 
 | 항목 | 결정 |
 | --- | --- |
-| 반 / 회차 구분 | 시즌으로 구분. 문제는 시즌 하나에 속한다 (반 구분은 여전히 없음) |
-| 동명이인 | 허용 (이름은 식별자가 아님) |
+| 회차 구분 | 시즌으로 구분. 문제는 시즌 하나에 속한다 |
+| 학생 계정 | 선생님이 미리 만든다. 이름 · 학교 · 학년 · 반 · 초기 비밀번호(숫자 4자리) |
+| 학생 로그인 | 이름 + 숫자 4자리. 자가 가입도, 비밀번호 자가 변경도 없다 |
+| 동명이인 | **불가.** 이름이 곧 로그인 아이디이므로 유일해야 한다 |
 | 오답 재시도 | 무제한. 단 분당 30회 속도 제한 |
 | 리더보드 | 없음 |
 | 문제 본문 | 텍스트 + LaTeX 수식(`$...$`) + 이미지 1장. 마크다운은 없음 |
@@ -33,10 +35,12 @@
 1. **정답 보호 = Postgres RPC (`security definer`)**
    Netlify Functions나 Supabase Edge Function을 쓰지 않습니다. `service_role` 키를 어디에도 두지 않습니다.
 2. **`anon` 역할은 테이블 직접 접근 권한이 전혀 없습니다.**
-   학생 화면은 RPC 5개만 호출합니다: `start_session`, `get_seasons_with_progress`,
-   `get_problems_with_progress`, `get_problem`, `submit_answer`.
-3. **학생 식별 = localStorage에 저장한 `students.id` UUID.**
-   기기를 바꾸거나 브라우저 저장소를 지우면 이어서 풀 수 있도록 시작 화면에 "이어하기 코드"(= 그 UUID) 입력란을 둡니다.
+   학생 화면은 RPC 6개만 호출합니다: `student_login`, `student_profile`,
+   `get_seasons_with_progress`, `get_problems_with_progress`, `get_problem`, `submit_answer`.
+3. **학생 식별 = 로그인 후 localStorage에 저장한 `students.id` UUID.**
+   저장하는 값은 `{id, name}` 뿐이고 비밀번호는 어디에도 남기지 않습니다.
+   앱을 열 때 `student_profile` 로 그 계정이 아직 유효한지 한 번 확인합니다 —
+   계정이 지워졌거나 사용 중지됐으면 세션을 버리고, 이름이 바뀌었으면 새 이름으로 갱신합니다.
 4. **복수 정답 허용** (`answers text[]`).
    관리자 UI는 textarea 한 줄에 하나씩 입력받아 배열로 변환합니다.
 5. **정규화 순서**: `normalize(NFKC)` → `btrim` → 연속 공백 1칸으로 축소 → `lower`
@@ -56,11 +60,28 @@
    **정답은 그림이 아니라 DB 에 있다는 원칙은 그대로다.** 업로드·삭제는 선생님만 가능하다.
 10. **시즌 = 문제를 묶는 단위. 학생 정체성은 시즌과 무관하다.**
     문제는 시즌 하나에 속한다 (`problems.season_id`, `on delete cascade`).
-    학생은 이름을 한 번만 입력하고 이어하기 코드도 하나다 — `students` 테이블은 건드리지 않았다.
-    진행률만 시즌별로 집계한다.
+    학생 계정은 하나뿐이고 시즌마다 따로 만들지 않는다. 진행률만 시즌별로 집계한다.
     **공개 판정은 두 단계다: 시즌이 공개이고 + 문제가 공개일 때만 학생에게 보인다.**
     조회(`get_problem`)뿐 아니라 채점(`submit_answer`)에서도 같은 조건을 건다 —
     조회만 막으면 주소를 아는 학생이 계속 답을 제출할 수 있기 때문이다.
+11. **학생 계정 = 선생님이 미리 만들어 두는 `students` 행. 이름이 곧 아이디다.**
+    로그인 입력이 이름 + 숫자 4자리뿐이므로 이름 하나가 학생 하나를 가리켜야 한다.
+    그래서 `lower(btrim(name))` 에 유니크 인덱스를 걸고, 동명이인은 만들 수 없다
+    (선생님이 `김민수(중2)` 처럼 구분해 적는다).
+    - **비밀번호는 bcrypt 해시로만 저장한다.** 평문은 DB 에도 브라우저에도 남지 않는다.
+      선생님 화면에서도 읽을 수 없다 — `password_hash` 는 컬럼 단위 권한에서 빠져 있어
+      `select *` 를 하면 42501 이 난다. 4자리 비밀번호의 해시는 후보가 1만 개뿐이라
+      새어 나가면 평문이나 마찬가지이기 때문이다. 잊어버리면 새로 정한다.
+    - **계정 생성과 비밀번호 변경은 RPC 로만 한다** (`teacher_create_student`,
+      `teacher_set_student_password`). 해시를 만드는 일이 서버 안에서 일어나야 하므로
+      `students` 에 INSERT 권한 자체를 주지 않는다. 두 함수는 `security definer` 라
+      RLS 를 우회하므로 함수 안에서 `is_teacher()` 를 직접 확인한다.
+    - **로그인 실패는 예외가 아니라 `ok = false` 로 돌려준다.**
+      `raise exception` 으로 알리면 "몇 번 틀렸는지" 를 적어 둔 UPDATE 까지 함께 롤백된다.
+      10회 틀리면 5분 잠긴다 — 4자리는 경우의 수가 1만 개뿐이라 잠금이 없으면 다 해볼 수 있다.
+      없는 이름과 틀린 비밀번호는 같은 문구로 답한다 (누가 등록돼 있는지 떠보지 못하게).
+    - **사용 중지(`is_active = false`)는 조회뿐 아니라 채점도 막는다.** 8번·10번과 같은 이유다.
+      기록을 남긴 채 로그인만 막고 싶을 때 쓰고, 삭제는 제출 기록까지 함께 지운다.
 
 ---
 
@@ -310,6 +331,27 @@ grant execute on function public.start_session(text),
 > "맞힌 문제 수" 와 같은 값이다. 화면의 **정답률 = 정답 제출 ÷ 전체 제출** 이라,
 > 오답을 여러 번 시도할수록 낮아진다. 난이도 지표로 읽으면 된다.
 
+### `supabase/08_students.sql`
+
+학생을 "아무 이름이나 적고 시작" 에서 **미리 만들어 둔 계정** 으로 바꾼다. 01~07 위에 덧씌운다.
+
+- `students.nickname` → `name` 으로 바꾸고 `school` · `grade` · `class_name` ·
+  `is_active` · `password_hash` · `failed_attempts` · `locked_until` 을 추가한다.
+- `lower(btrim(name))` 유니크 인덱스 — 이름이 로그인 아이디다.
+  **기존 데이터에 동명이인이 있으면 스크립트가 맨 앞에서 멈추고 무엇이 겹치는지 알려준다.**
+- 학생용 `student_login` · `student_profile`, 선생님용 `teacher_create_student` ·
+  `teacher_set_student_password` 를 만들고 `start_session` 은 지운다.
+- `submit_answer` 는 `is_active` 까지 확인하도록 바꾼다 (시그니처가 그대로라 권한이 유지된다).
+- `students` 권한을 컬럼 단위로 다시 준다 — 선생님도 `password_hash` 는 읽을 수 없고,
+  INSERT 권한은 아무에게도 없다.
+- `teacher_student_stats` · `teacher_student_season_stats` 를 새 컬럼에 맞춰 다시 만든다.
+
+> **계정 방식 이전부터 있던 학생** 에게는 알 수 없는 해시가 들어간다(숫자 4자리가 아니라
+> 어떤 입력으로도 로그인되지 않는다). 선생님이 비밀번호를 새로 정해 줘야 쓸 수 있다.
+
+> `crypt()` 는 pgcrypto 가 `public` 에 있든 `extensions` 에 있든 찾을 수 있어야 하므로,
+> 스크립트와 비밀번호를 다루는 함수 모두 `search_path` 에 두 스키마를 넣는다.
+
 ---
 
 ## 5. 폴더 구조 (이대로. 더 만들지 않는다)
@@ -325,7 +367,7 @@ tsconfig.node.json
 vite.config.ts
 README.md
 PLAN.md
-supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql  06_seasons.sql  07_season_stats.sql
+supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql  06_seasons.sql  07_season_stats.sql  08_students.sql
 src/
   main.tsx              # createRoot + BrowserRouter
   App.tsx               # 라우트 정의만
@@ -333,23 +375,24 @@ src/
   vite-env.d.ts         # ImportMetaEnv 타입 선언
   lib/
     supabase.ts         # createClient 싱글턴. env 누락 시 명확한 한국어 에러 throw
-    types.ts            # Problem, ProblemSummary, ProgressRow, SubmitResult, StudentStats, ProblemStats
-    session.ts          # localStorage 키 "quiz.student" 에 {id, nickname} 저장. get/set/clear + useStudent 훅
+    types.ts            # Problem, ProblemSummary, ProgressRow, SubmitResult, Student, StudentStats, ProblemStats
+    session.ts          # localStorage 키 "quiz.student" 에 {id, name} 저장. get/set/clear + useStudent 훅
     errors.ts           # Supabase PostgrestError → 사용자용 한국어 메시지 변환
     images.ts           # 문제 그림 업로드·삭제·공개 URL (Supabase Storage)
   components/
     Layout.tsx          # 공통 헤더/컨테이너
     MathText.tsx        # 본문 속 $...$ 를 KaTeX 로 렌더링
-    RequireStudent.tsx  # 세션 없으면 "/" 로 리다이렉트
+    RequireStudent.tsx  # 세션 없으면 "/" 로 리다이렉트. 앱을 열 때 student_profile 로 계정 유효성 1회 확인
     RequireTeacher.tsx  # Auth 세션 + teachers 본인 행 확인, 실패 시 /teacher/login
   pages/
-    StudentStart.tsx        "/"                      이름 입력 → start_session. 기존 세션 있으면 "이어서 풀기". 이어하기 코드 입력란
+    StudentStart.tsx        "/"                      이름 + 숫자 4자리 → student_login. 로그인돼 있으면 "이어서 풀기"
     SeasonList.tsx          "/seasons"               get_seasons_with_progress. 시즌별 진행률
     ProblemList.tsx         "/seasons/:seasonId"     get_problems_with_progress. 그 시즌의 문제만
     ProblemSolve.tsx        "/problems/:id"          get_problem + submit_answer. 정답/오답 즉시 피드백
-    MyProgress.tsx          "/me"                    맞춘 수/전체, 이어하기 코드 표시(복사 버튼)
+    MyProgress.tsx          "/me"                    맞춘 수/전체, 시즌별 진행률, 로그아웃
     TeacherLogin.tsx        "/teacher/login"         signInWithPassword
     TeacherSeasons.tsx      "/teacher/seasons"       시즌 생성·이름수정·공개토글·삭제
+    TeacherStudents.tsx     "/teacher/students"      학생 계정 생성(한 명/여러 명)·정보 수정·비밀번호 재설정·사용중지·삭제
     TeacherProblems.tsx     "/teacher"               목록·공개토글·삭제. ?season= 로 시즌 필터
     TeacherProblemEdit.tsx  "/teacher/problems/:id"  :id === "new" 면 등록, 아니면 수정
     TeacherStats.tsx        "/teacher/stats"         시즌 요약 + 시즌 필터가 걸리는 문제별·학생별 표

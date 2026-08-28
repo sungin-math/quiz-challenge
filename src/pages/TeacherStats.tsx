@@ -95,7 +95,7 @@ export default function TeacherStats() {
   // 시즌을 고르면 그 시즌 기준 표로, 전체이면 지금까지의 누적 표로 바꾼다.
   const visibleStudentSeasons = (stats?.studentSeasons ?? [])
     .filter((row) => row.season_id === seasonFilter)
-    .sort((a, b) => b.solved_count - a.solved_count || a.nickname.localeCompare(b.nickname, 'ko'));
+    .sort((a, b) => b.solved_count - a.solved_count || a.name.localeCompare(b.name, 'ko'));
 
   return (
     <Layout>
@@ -250,6 +250,7 @@ export default function TeacherStats() {
                     <thead className="bg-stone-50 text-left text-xs text-stone-500">
                       <tr>
                         <th className="px-3 py-2 font-medium">이름</th>
+                        <th className="px-3 py-2 font-medium">반</th>
                         <th className="px-3 py-2 text-right font-medium">맞힌 문제</th>
                         <th className="px-3 py-2 text-right font-medium">제출 수</th>
                         <th className="px-3 py-2 font-medium">마지막 활동</th>
@@ -258,7 +259,8 @@ export default function TeacherStats() {
                     <tbody>
                       {stats.students.map((row) => (
                         <tr key={row.student_id} className="border-t border-stone-100">
-                          <td className="max-w-[12rem] truncate px-3 py-2 text-stone-900">{row.nickname}</td>
+                          <td className="max-w-[12rem] truncate px-3 py-2 text-stone-900">{row.name}</td>
+                          <td className="max-w-[10rem] truncate px-3 py-2 text-stone-500">{row.class_name}</td>
                           <td className="px-3 py-2 text-right tabular-nums font-medium text-emerald-700">
                             {row.solved_count}
                           </td>
@@ -280,6 +282,7 @@ export default function TeacherStats() {
                   <thead className="bg-stone-50 text-left text-xs text-stone-500">
                     <tr>
                       <th className="px-3 py-2 font-medium">이름</th>
+                      <th className="px-3 py-2 font-medium">반</th>
                       <th className="px-3 py-2 text-right font-medium">맞힌 문제</th>
                       <th className="px-3 py-2 text-right font-medium">제출 수</th>
                       <th className="px-3 py-2 font-medium">마지막 제출</th>
@@ -288,7 +291,8 @@ export default function TeacherStats() {
                   <tbody>
                     {visibleStudentSeasons.map((row) => (
                       <tr key={row.student_id} className="border-t border-stone-100">
-                        <td className="max-w-[12rem] truncate px-3 py-2 text-stone-900">{row.nickname}</td>
+                        <td className="max-w-[12rem] truncate px-3 py-2 text-stone-900">{row.name}</td>
+                        <td className="max-w-[10rem] truncate px-3 py-2 text-stone-500">{row.class_name}</td>
                         <td className="px-3 py-2 text-right tabular-nums font-medium text-emerald-700">
                           {row.solved_count}
                           <span className="font-normal text-stone-400">

@@ -3,63 +3,57 @@ import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
-import { clearStudent, displayName, isValidStudentCode, setStudent, useStudent } from '../lib/session';
+import { clearStudent, displayName, setStudent, useStudent } from '../lib/session';
 
 export default function StudentStart() {
   const student = useStudent();
   const navigate = useNavigate();
 
-  const [nickname, setNickname] = useState('');
-  const [resumeCode, setResumeCode] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  async function handleStart(event: FormEvent<HTMLFormElement>): Promise<void> {
+  async function handleLogin(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setErrorMessage(null);
 
-    const trimmed = nickname.trim();
-    if (trimmed.length < 1 || trimmed.length > 20) {
-      setErrorMessage('이름은 1~20자로 입력해 주세요.');
+    const trimmedName = name.trim();
+    if (trimmedName === '') {
+      setErrorMessage('이름을 입력해 주세요.');
+      return;
+    }
+    if (!/^\d{4}$/.test(password)) {
+      setErrorMessage('비밀번호는 숫자 4자리입니다.');
       return;
     }
 
     setIsSubmitting(true);
-    // start_session 은 students.id(uuid) 하나를 돌려준다.
-    const { data, error } = await supabase.rpc('start_session', { p_nickname: trimmed });
+    const { data, error } = await supabase.rpc('student_login', {
+      p_name: trimmedName,
+      p_password: password,
+    });
     setIsSubmitting(false);
 
     if (error) {
       setErrorMessage(toUserMessage(error));
       return;
     }
-    if (typeof data !== 'string' || !isValidStudentCode(data)) {
-      setErrorMessage('시작에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+
+    // 실패도 정상 응답으로 온다. ok 가 false 면 message 가 그대로 보여줄 문구다.
+    const result = data?.[0];
+    if (!result) {
+      setErrorMessage('로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    if (!result.ok || !result.student_id || !result.student_name) {
+      setPassword('');
+      setErrorMessage(result.message || '이름 또는 비밀번호가 올바르지 않습니다.');
       return;
     }
 
     try {
-      setStudent({ id: data, nickname: trimmed });
-    } catch (storageError) {
-      setErrorMessage(toUserMessage(storageError));
-      return;
-    }
-    navigate('/seasons');
-  }
-
-  function handleResume(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    setErrorMessage(null);
-
-    const trimmed = resumeCode.trim();
-    if (!isValidStudentCode(trimmed)) {
-      setErrorMessage('이어하기 코드 형식이 올바르지 않습니다. 내 기록 화면에서 복사한 코드를 붙여넣어 주세요.');
-      return;
-    }
-
-    try {
-      // 이 코드로 실제 기록이 있는지는 첫 제출 때 서버가 확인해 준다.
-      setStudent({ id: trimmed.toLowerCase(), nickname: null });
+      setStudent({ id: result.student_id, name: result.student_name });
     } catch (storageError) {
       setErrorMessage(toUserMessage(storageError));
       return;
@@ -69,7 +63,7 @@ export default function StudentStart() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="mx-auto max-w-sm space-y-6">
         {/* 첫 화면에서만 로고를 크게 보여준다. 나머지 화면은 헤더의 작은 로고로 충분하다. */}
         <section className="rounded-2xl border border-stone-200 bg-white px-6 py-8 text-center">
           <img
@@ -82,8 +76,8 @@ export default function StudentStart() {
           />
           <h1 className="mt-4 text-2xl font-bold text-stone-900">문제풀이 챌린지</h1>
           <p className="mt-1 text-sm font-medium text-brand-700">강성인 수학</p>
-          <p className="mx-auto mt-3 max-w-md text-sm text-stone-600">
-            이름만 입력하면 바로 시작할 수 있습니다. 답을 제출하면 즉시 채점됩니다.
+          <p className="mx-auto mt-3 text-sm text-stone-600">
+            선생님께 받은 이름과 비밀번호로 로그인하세요. 답을 제출하면 즉시 채점됩니다.
           </p>
         </section>
 
@@ -93,10 +87,10 @@ export default function StudentStart() {
           </p>
         )}
 
-        {student && (
+        {student ? (
           <section className="rounded-lg border border-brand-200 bg-brand-50 p-4">
             <p className="text-sm text-brand-900">
-              <span className="font-semibold">{displayName(student)}</span> 님의 진행 기록이 있습니다.
+              <span className="font-semibold">{displayName(student)}</span> 님으로 로그인되어 있습니다.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
@@ -109,69 +103,60 @@ export default function StudentStart() {
                 type="button"
                 onClick={() => {
                   clearStudent();
-                  setNickname('');
+                  setName('');
+                  setPassword('');
                   setErrorMessage(null);
                 }}
                 className="rounded-md border border-brand-300 bg-white px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
               >
-                다른 이름으로 시작
+                로그아웃
               </button>
             </div>
           </section>
-        )}
-
-        {!student && (
-          <form onSubmit={handleStart} className="rounded-lg border border-stone-200 bg-white p-4">
-            <label htmlFor="nickname" className="block text-sm font-medium text-stone-700">
+        ) : (
+          <form onSubmit={handleLogin} className="rounded-lg border border-stone-200 bg-white p-4">
+            <label htmlFor="name" className="block text-sm font-medium text-stone-700">
               이름
             </label>
             <input
-              id="nickname"
+              id="name"
               type="text"
-              value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               maxLength={20}
-              autoComplete="off"
+              autoComplete="username"
               placeholder="예: 김민수"
               className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
-            <p className="mt-1 text-xs text-stone-500">1~20자. 같은 이름이 있어도 괜찮습니다.</p>
+
+            <label htmlFor="password" className="mt-3 block text-sm font-medium text-stone-700">
+              비밀번호
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              // 숫자만 남긴다. 휴대폰에서도 숫자 자판이 바로 뜨도록 inputMode 를 준다.
+              onChange={(event) => setPassword(event.target.value.replace(/\D/g, '').slice(0, 4))}
+              inputMode="numeric"
+              autoComplete="current-password"
+              maxLength={4}
+              placeholder="숫자 4자리"
+              className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base tracking-[0.4em] outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+            />
+            <p className="mt-1 text-xs text-stone-500">
+              계정은 선생님이 만들어 둡니다. 로그인이 안 되면 선생님께 문의해 주세요.
+            </p>
+
             <button
               type="submit"
               disabled={isSubmitting}
               className="mt-3 w-full rounded-md bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300"
             >
-              {isSubmitting ? '시작하는 중…' : '시작하기'}
+              {isSubmitting ? '로그인 중…' : '로그인'}
             </button>
           </form>
         )}
-
-        <details className="rounded-lg border border-stone-200 bg-white p-4">
-          <summary className="cursor-pointer text-sm font-medium text-stone-700">
-            이어하기 코드가 있나요?
-          </summary>
-          <form onSubmit={handleResume} className="mt-3">
-            <p className="text-xs text-stone-500">
-              전에 쓰던 기기의 <span className="font-medium">내 기록</span> 화면에서 복사한 코드를 붙여넣으면
-              풀던 기록을 그대로 이어갈 수 있습니다.
-            </p>
-            <input
-              type="text"
-              value={resumeCode}
-              onChange={(event) => setResumeCode(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="00000000-0000-0000-0000-000000000000"
-              className="mt-2 w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-            />
-            <button
-              type="submit"
-              className="mt-3 w-full rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
-            >
-              코드로 이어하기
-            </button>
-          </form>
-        </details>
 
         <p className="text-center text-xs text-stone-400">
           <Link to="/teacher/login" className="hover:text-stone-600">
