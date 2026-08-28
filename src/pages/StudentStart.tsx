@@ -118,13 +118,20 @@ export default function StudentStart() {
             <label htmlFor="name" className="block text-sm font-medium text-stone-700">
               이름
             </label>
+            {/*
+              autoComplete 을 username/current-password 로 두면 크롬이 같은 주소에 저장해 둔
+              "선생님 로그인" 자격 증명을 이 칸에 채워 넣는다 (이름 칸에 선생님 이메일이 들어갔다).
+              학생 비밀번호는 숫자 4자리라 브라우저 비밀번호 관리자에 넣을 것도 아니므로,
+              이름은 off, 비밀번호는 one-time-code 로 저장된 자격 증명과 엮이지 않게 한다.
+            */}
             <input
               id="name"
+              name="studentName"
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               maxLength={20}
-              autoComplete="username"
+              autoComplete="off"
               placeholder="예: 김민수"
               className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
             />
@@ -134,12 +141,13 @@ export default function StudentStart() {
             </label>
             <input
               id="password"
+              name="studentPin"
               type="password"
               value={password}
               // 숫자만 남긴다. 휴대폰에서도 숫자 자판이 바로 뜨도록 inputMode 를 준다.
               onChange={(event) => setPassword(event.target.value.replace(/\D/g, '').slice(0, 4))}
               inputMode="numeric"
-              autoComplete="current-password"
+              autoComplete="one-time-code"
               maxLength={4}
               placeholder="숫자 4자리"
               className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 text-base tracking-[0.4em] outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
