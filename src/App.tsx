@@ -10,6 +10,7 @@ import TeacherLogin from './pages/TeacherLogin';
 import TeacherSeasons from './pages/TeacherSeasons';
 import TeacherProblems from './pages/TeacherProblems';
 import TeacherStudents from './pages/TeacherStudents';
+import TeacherClasses from './pages/TeacherClasses';
 import TeacherProblemEdit from './pages/TeacherProblemEdit';
 import TeacherStats from './pages/TeacherStats';
 
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/teacher/seasons" element={<TeacherSeasons />} />
         <Route path="/teacher/problems/:id" element={<TeacherProblemEdit />} />
         <Route path="/teacher/students" element={<TeacherStudents />} />
+        <Route path="/teacher/classes" element={<TeacherClasses />} />
         <Route path="/teacher/stats" element={<TeacherStats />} />
       </Route>
 

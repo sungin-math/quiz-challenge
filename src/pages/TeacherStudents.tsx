@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { toUserMessage } from '../lib/errors';
-import { STUDENT_COLUMNS, type LoadState, type Student } from '../lib/types';
+import { GRADES, STUDENT_COLUMNS, type LoadState, type SchoolClass, type Student } from '../lib/types';
+
+/** 학생과 반을 함께 들고 있어야 드롭다운과 목록에 반 이름을 붙일 수 있다. */
+type Loaded = { students: Student[]; classes: SchoolClass[] };
 
 /** 새 계정 입력칸 한 벌. 비밀번호 말고는 비워 둬도 저장된다. */
 interface Draft {
   name: string;
   school: string;
   grade: string;
-  class_name: string;
+  class_id: string;
   password: string;
 }
 
-const EMPTY_DRAFT: Draft = { name: '', school: '', grade: '', class_name: '', password: '' };
+const EMPTY_DRAFT: Draft = { name: '', school: '', grade: '', class_id: '', password: '' };
 
 /** 비밀번호는 숫자 4자리. 화면과 서버(teacher_create_student) 양쪽에서 같은 규칙을 건다. */
 const PASSWORD_PATTERN = /^\d{4}$/;
@@ -22,23 +26,16 @@ function onlyDigits(value: string): string {
   return value.replace(/\D/g, '').slice(0, 4);
 }
 
-/**
- * 붙여넣기 한 줄을 계정 하나로 읽는다.
- * `이름, 학교, 학년, 반, 비밀번호` 순서. 엑셀에서 복사한 탭 구분도 받는다.
- */
-function parseBulkLine(line: string): Draft | string {
-  const parts = line.split(/[\t,]/).map((part) => part.trim());
-  if (parts.length !== 5) {
-    return '쉼표로 구분한 5칸(이름, 학교, 학년, 반, 비밀번호)이 필요합니다.';
-  }
-  const [name, school, grade, class_name, password] = parts;
-  if (name === '') return '이름이 비어 있습니다.';
-  if (!PASSWORD_PATTERN.test(password)) return '비밀번호가 숫자 4자리가 아닙니다.';
-  return { name, school, grade, class_name, password };
+/** 드롭다운의 빈 선택지는 '' 로 두고, 서버로 보낼 때만 null 로 바꾼다. */
+function toClassId(value: string): string | null {
+  return value === '' ? null : value;
 }
 
 export default function TeacherStudents() {
-  const [state, setState] = useState<LoadState<Student[]>>({ status: 'loading' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const classFilter = searchParams.get('class') ?? '';
+
+  const [state, setState] = useState<LoadState<Loaded>>({ status: 'loading' });
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -59,29 +56,46 @@ export default function TeacherStudents() {
     name: '',
     school: '',
     grade: '',
-    class_name: '',
+    class_id: '',
   });
   const [passwordTargetId, setPasswordTargetId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
 
   const load = useCallback(async (): Promise<void> => {
     setState({ status: 'loading' });
-    const { data, error } = await supabase
-      .from('students')
-      .select(STUDENT_COLUMNS)
-      .order('name', { ascending: true })
-      .returns<Student[]>();
 
+    const [studentsResult, classesResult] = await Promise.all([
+      supabase
+        .from('students')
+        .select(STUDENT_COLUMNS)
+        .order('name', { ascending: true })
+        .returns<Student[]>(),
+      supabase
+        .from('classes')
+        .select('*')
+        .order('order_index', { ascending: true })
+        .order('created_at', { ascending: true })
+        .returns<SchoolClass[]>(),
+    ]);
+
+    const error = studentsResult.error ?? classesResult.error;
     if (error) {
       setState({ status: 'error', message: toUserMessage(error) });
       return;
     }
-    setState({ status: 'ready', value: data ?? [] });
+    setState({
+      status: 'ready',
+      value: { students: studentsResult.data ?? [], classes: classesResult.data ?? [] },
+    });
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const classes = state.status === 'ready' ? state.value.classes : [];
+  const classNameOf = (classId: string | null): string =>
+    classes.find((item) => item.id === classId)?.name ?? '';
 
   async function createStudent(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -101,8 +115,8 @@ export default function TeacherStudents() {
     const { error } = await supabase.rpc('teacher_create_student', {
       p_name: draft.name.trim(),
       p_school: draft.school.trim(),
-      p_grade: draft.grade.trim(),
-      p_class_name: draft.class_name.trim(),
+      p_grade: draft.grade,
+      p_class_id: toClassId(draft.class_id),
       p_password: draft.password,
     });
     setIsCreating(false);
@@ -112,7 +126,8 @@ export default function TeacherStudents() {
       return;
     }
     setNotice(`${draft.name.trim()} 학생 계정을 만들었습니다.`);
-    setDraft(EMPTY_DRAFT);
+    // 반·학년·학교는 다음 학생도 같은 경우가 많으므로 남겨 둔다.
+    setDraft({ ...draft, name: '', password: '' });
     await load();
   }
 
@@ -130,15 +145,50 @@ export default function TeacherStudents() {
       return;
     }
 
+    // 반은 이름으로 적고 여기서 id 를 찾는다. 없는 반이면 만들지 않고 알려 준다.
+    const classIdByName = new Map(classes.map((item) => [item.name.trim().toLowerCase(), item.id]));
+
     // 형식이 틀린 줄이 하나라도 있으면 아무것도 만들지 않는다.
     // 절반만 들어간 상태에서 어디까지 됐는지 세는 것보다 낫다.
     const drafts: Draft[] = [];
     const problems: string[] = [];
+
     lines.forEach((line, index) => {
-      const parsed = parseBulkLine(line);
-      if (typeof parsed === 'string') problems.push(`${index + 1}번째 줄: ${parsed}`);
-      else drafts.push(parsed);
+      const label = `${index + 1}번째 줄`;
+      // 엑셀에서 복사한 탭 구분도 받는다.
+      const parts = line.split(/[\t,]/).map((part) => part.trim());
+      if (parts.length !== 5) {
+        problems.push(`${label}: 쉼표로 구분한 5칸(이름, 학교, 학년, 반, 비밀번호)이 필요합니다.`);
+        return;
+      }
+
+      const [name, school, grade, className, password] = parts;
+      if (name === '') {
+        problems.push(`${label}: 이름이 비어 있습니다.`);
+        return;
+      }
+      if (!PASSWORD_PATTERN.test(password)) {
+        problems.push(`${label}: 비밀번호가 숫자 4자리가 아닙니다.`);
+        return;
+      }
+      if (grade !== '' && !GRADES.includes(grade as (typeof GRADES)[number])) {
+        problems.push(`${label}: 학년은 ${GRADES.join(' · ')} 중 하나여야 합니다 ("${grade}").`);
+        return;
+      }
+
+      let classId = '';
+      if (className !== '') {
+        const found = classIdByName.get(className.toLowerCase());
+        if (found === undefined) {
+          problems.push(`${label}: "${className}" 반이 없습니다. 반 관리에서 먼저 만들어 주세요.`);
+          return;
+        }
+        classId = found;
+      }
+
+      drafts.push({ name, school, grade, class_id: classId, password });
     });
+
     if (problems.length > 0) {
       setBulkErrors(problems);
       return;
@@ -152,7 +202,7 @@ export default function TeacherStudents() {
         p_name: item.name,
         p_school: item.school,
         p_grade: item.grade,
-        p_class_name: item.class_name,
+        p_class_id: toClassId(item.class_id),
         p_password: item.password,
       });
       if (error) failures.push(`${item.name}: ${toUserMessage(error)}`);
@@ -161,7 +211,9 @@ export default function TeacherStudents() {
     setIsBulkRunning(false);
 
     setBulkErrors(failures);
-    setNotice(`${created}명을 추가했습니다.${failures.length > 0 ? ` ${failures.length}명은 실패했습니다.` : ''}`);
+    setNotice(
+      `${created}명을 추가했습니다.${failures.length > 0 ? ` ${failures.length}명은 실패했습니다.` : ''}`,
+    );
     if (failures.length === 0) setBulkText('');
     await load();
   }
@@ -181,8 +233,8 @@ export default function TeacherStudents() {
       .update({
         name: editDraft.name.trim(),
         school: editDraft.school.trim(),
-        grade: editDraft.grade.trim(),
-        class_name: editDraft.class_name.trim(),
+        grade: editDraft.grade,
+        class_id: toClassId(editDraft.class_id),
       })
       .eq('id', student.id);
     setBusyId(null);
@@ -258,12 +310,15 @@ export default function TeacherStudents() {
     await load();
   }
 
-  const students = state.status === 'ready' ? state.value : [];
+  const students = state.status === 'ready' ? state.value.students : [];
   const needle = query.trim().toLowerCase();
   const visible = students.filter((student) => {
     if (!showInactive && !student.is_active) return false;
+    // 'none' = 반이 정해지지 않은 학생만.
+    if (classFilter === 'none' && student.class_id !== null) return false;
+    if (classFilter !== '' && classFilter !== 'none' && student.class_id !== classFilter) return false;
     if (needle === '') return true;
-    return [student.name, student.school, student.grade, student.class_name]
+    return [student.name, student.school, student.grade, classNameOf(student.class_id)]
       .join(' ')
       .toLowerCase()
       .includes(needle);
@@ -272,9 +327,36 @@ export default function TeacherStudents() {
   const inputClass =
     'w-full rounded-md border border-stone-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200';
 
+  const classOptions = (
+    <>
+      <option value="">반 없음</option>
+      {classes.map((item) => (
+        <option key={item.id} value={item.id}>
+          {item.name}
+        </option>
+      ))}
+    </>
+  );
+
+  const gradeOptions = (
+    <>
+      <option value="">선택 안 함</option>
+      {GRADES.map((grade) => (
+        <option key={grade} value={grade}>
+          {grade}
+        </option>
+      ))}
+    </>
+  );
+
   return (
     <Layout>
-      <h1 className="text-xl font-bold text-stone-900">학생 관리</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-bold text-stone-900">학생 관리</h1>
+        <Link to="/teacher/classes" className="text-sm text-stone-500 hover:text-stone-800">
+          반 관리 →
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-stone-600">
         학생은 <span className="font-medium">이름</span>과{' '}
         <span className="font-medium">숫자 4자리 비밀번호</span>로 로그인합니다. 이름만으로 계정을 찾으므로
@@ -289,6 +371,16 @@ export default function TeacherStudents() {
       {notice && (
         <p className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           {notice}
+        </p>
+      )}
+
+      {state.status === 'ready' && classes.length === 0 && (
+        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          아직 반이 없습니다.{' '}
+          <Link to="/teacher/classes" className="font-medium underline">
+            반 관리
+          </Link>
+          에서 먼저 반을 만들면 아래 드롭다운에서 고를 수 있습니다. 반 없이도 계정은 만들 수 있습니다.
         </p>
       )}
 
@@ -314,31 +406,29 @@ export default function TeacherStudents() {
               value={draft.school}
               onChange={(event) => setDraft({ ...draft, school: event.target.value })}
               maxLength={40}
-              placeholder="○○중학교"
+              placeholder="○○고등학교"
               className={inputClass}
             />
           </label>
           <label className="block">
             <span className="text-xs text-stone-500">학년</span>
-            <input
-              type="text"
+            <select
               value={draft.grade}
               onChange={(event) => setDraft({ ...draft, grade: event.target.value })}
-              maxLength={20}
-              placeholder="중2"
-              className={inputClass}
-            />
+              className={`${inputClass} bg-white`}
+            >
+              {gradeOptions}
+            </select>
           </label>
           <label className="block">
             <span className="text-xs text-stone-500">반</span>
-            <input
-              type="text"
-              value={draft.class_name}
-              onChange={(event) => setDraft({ ...draft, class_name: event.target.value })}
-              maxLength={40}
-              placeholder="목요일 A반"
-              className={inputClass}
-            />
+            <select
+              value={draft.class_id}
+              onChange={(event) => setDraft({ ...draft, class_id: event.target.value })}
+              className={`${inputClass} bg-white`}
+            >
+              {classOptions}
+            </select>
           </label>
           <label className="block">
             <span className="text-xs text-stone-500">초기 비밀번호</span>
@@ -360,6 +450,9 @@ export default function TeacherStudents() {
         >
           {isCreating ? '만드는 중…' : '학생 추가'}
         </button>
+        <p className="mt-2 text-xs text-stone-500">
+          추가한 뒤 학교·학년·반은 그대로 남습니다. 같은 반 학생을 이어서 넣기 좋습니다.
+        </p>
       </form>
 
       {/* ── 여러 명 추가 ───────────────────────────────────────────── */}
@@ -372,12 +465,16 @@ export default function TeacherStudents() {
           <span className="font-mono text-stone-700">이름, 학교, 학년, 반, 비밀번호</span> 순서로
           적어 주세요. 엑셀에서 5칸을 복사해 붙여넣어도 됩니다. 학교·학년·반은 비워 둘 수 있습니다.
         </p>
+        <p className="mt-1 text-xs text-stone-500">
+          학년은 <span className="font-medium">{GRADES.join(' · ')}</span> 중 하나여야 하고, 반은{' '}
+          <span className="font-medium">반 관리에 있는 이름</span>과 정확히 같아야 합니다.
+        </p>
         <textarea
           value={bulkText}
           onChange={(event) => setBulkText(event.target.value)}
           rows={6}
           spellCheck={false}
-          placeholder={'김민수, ○○중학교, 중2, 목요일 A반, 1234\n이서연, ○○중학교, 중2, 목요일 A반, 5678'}
+          placeholder={'김민수, ○○고등학교, 고1, 목요일 A반, 1234\n이서연, ○○고등학교, 고1, 목요일 A반, 5678'}
           className="mt-2 w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
         />
         {bulkErrors.length > 0 && (
@@ -397,7 +494,7 @@ export default function TeacherStudents() {
         </button>
       </details>
 
-      {/* ── 검색 ───────────────────────────────────────────────────── */}
+      {/* ── 찾기 ───────────────────────────────────────────────────── */}
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <input
           type="search"
@@ -406,6 +503,23 @@ export default function TeacherStudents() {
           placeholder="이름 · 학교 · 학년 · 반으로 찾기"
           className="min-w-0 flex-1 rounded-md border border-stone-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
         />
+        <select
+          value={classFilter}
+          onChange={(event) => {
+            const next = event.target.value;
+            setSearchParams(next === '' ? {} : { class: next }, { replace: true });
+          }}
+          aria-label="반으로 거르기"
+          className="shrink-0 rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+        >
+          <option value="">전체 반</option>
+          {classes.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+          <option value="none">반 없음</option>
+        </select>
         <label className="flex shrink-0 items-center gap-1.5 text-sm text-stone-600">
           <input
             type="checkbox"
@@ -469,25 +583,25 @@ export default function TeacherStudents() {
                   </label>
                   <label className="block">
                     <span className="text-xs text-stone-500">학년</span>
-                    <input
-                      type="text"
+                    <select
                       value={editDraft.grade}
                       onChange={(event) => setEditDraft({ ...editDraft, grade: event.target.value })}
-                      maxLength={20}
-                      className={inputClass}
-                    />
+                      className={`${inputClass} bg-white`}
+                    >
+                      {gradeOptions}
+                    </select>
                   </label>
                   <label className="block">
                     <span className="text-xs text-stone-500">반</span>
-                    <input
-                      type="text"
-                      value={editDraft.class_name}
+                    <select
+                      value={editDraft.class_id}
                       onChange={(event) =>
-                        setEditDraft({ ...editDraft, class_name: event.target.value })
+                        setEditDraft({ ...editDraft, class_id: event.target.value })
                       }
-                      maxLength={40}
-                      className={inputClass}
-                    />
+                      className={`${inputClass} bg-white`}
+                    >
+                      {classOptions}
+                    </select>
                   </label>
                   <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
                     <button
@@ -517,9 +631,9 @@ export default function TeacherStudents() {
                           사용 중지
                         </span>
                       )}
-                      {student.class_name !== '' && (
+                      {student.class_id !== null && (
                         <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-                          {student.class_name}
+                          {classNameOf(student.class_id)}
                         </span>
                       )}
                     </div>
@@ -539,7 +653,7 @@ export default function TeacherStudents() {
                           name: student.name,
                           school: student.school,
                           grade: student.grade,
-                          class_name: student.class_name,
+                          class_id: student.class_id ?? '',
                         });
                       }}
                       className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50"

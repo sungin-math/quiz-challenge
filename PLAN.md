@@ -21,6 +21,8 @@
 | --- | --- |
 | 회차 구분 | 시즌으로 구분. 문제는 시즌 하나에 속한다 |
 | 학생 계정 | 선생님이 미리 만든다. 이름 · 학교 · 학년 · 반 · 초기 비밀번호(숫자 4자리) |
+| 학년 | 고1 · 고2 · 고3 중에서 고른다. 화면의 고정 목록(`GRADES`)이고 표가 아니다 |
+| 반 | `classes` 표로 관리한다. 선생님이 만들어 두고 학생은 그 목록에서 고른다 |
 | 학생 로그인 | 이름 + 숫자 4자리. 자가 가입도, 비밀번호 자가 변경도 없다 |
 | 동명이인 | **불가.** 이름이 곧 로그인 아이디이므로 유일해야 한다 |
 | 오답 재시도 | 무제한. 단 분당 30회 속도 제한 |
@@ -82,6 +84,17 @@
       없는 이름과 틀린 비밀번호는 같은 문구로 답한다 (누가 등록돼 있는지 떠보지 못하게).
     - **사용 중지(`is_active = false`)는 조회뿐 아니라 채점도 막는다.** 8번·10번과 같은 이유다.
       기록을 남긴 채 로그인만 막고 싶을 때 쓰고, 삭제는 제출 기록까지 함께 지운다.
+12. **반은 표(`classes`), 학년은 화면의 고정 목록.** 둘 다 자유 입력이 아니라 드롭다운이다.
+    - **반을 표로 둔 이유**: 자유 입력이면 `목요일A반` 과 `목요일 A반` 이 갈라져 통계가 쪼개진다.
+      `students.class_id` 로 참조하므로 이름을 한 번 고치면 그 반 학생 전부에게 반영된다.
+      반을 지우면 `on delete set null` — 학생은 "반 없음" 이 되고 계정과 제출 기록은 남는다.
+      (삭제 확인창에서 몇 명이 영향받는지 먼저 알려준다.)
+    - **학년을 표로 두지 않은 이유**: 값이 세 개뿐이고 거의 바뀌지 않는다. 표로 만들면
+      관리 화면이 하나 더 늘어날 뿐이다. `src/lib/types.ts` 의 `GRADES` 배열 하나가
+      드롭다운과 붙여넣기 검증을 동시에 정한다 — 중3 을 넣고 싶으면 여기만 고친다.
+      **DB 는 그대로 `text`** 라 체크 제약을 고치러 SQL 을 다시 실행할 일이 없다.
+    - 통계 뷰는 `classes` 를 조인해 계속 `class_name` 이라는 이름으로 값을 내려 준다.
+      화면 코드는 반이 표가 된 것을 모른다.
 
 ---
 
@@ -352,6 +365,22 @@ grant execute on function public.start_session(text),
 > `crypt()` 는 pgcrypto 가 `public` 에 있든 `extensions` 에 있든 찾을 수 있어야 하므로,
 > 스크립트와 비밀번호를 다루는 함수 모두 `search_path` 에 두 스키마를 넣는다.
 
+### `supabase/09_classes.sql`
+
+반을 자유 입력 텍스트에서 표로 바꾼다. 01~08 위에 덧씌운다.
+
+- `classes` 테이블 (`name` 유니크, `order_index`) + 선생님 전용 RLS.
+- `students.class_name` → `class_id uuid references classes(id) on delete set null`.
+  기존에 적어 둔 반 이름은 `classes` 로 옮기고 참조를 이어 준다.
+- `teacher_create_student` 의 인자가 `p_class_name text` → `p_class_id uuid` 로 바뀐다.
+  **인자 타입이 바뀌면 `create or replace` 가 안 되므로 지우고 새로 만든다 — 권한도 함께
+  사라지니 `revoke`/`grant` 를 다시 건다** (`anon` 을 명시하는 이유는 08 의 6번 주석 참고).
+- `teacher_student_stats` · `teacher_student_season_stats` 를 다시 만든다.
+  `classes` 를 조인해 `class_name` 이라는 같은 이름으로 값을 내려 주므로 화면 코드는 그대로다.
+
+> **컬럼을 지우기 전에 뷰를 먼저 지운다.** 두 뷰가 `class_name` 을 참조하고 있어서
+> 순서를 바꾸면 `drop column` 이 거절된다.
+
 ---
 
 ## 5. 폴더 구조 (이대로. 더 만들지 않는다)
@@ -367,7 +396,7 @@ tsconfig.node.json
 vite.config.ts
 README.md
 PLAN.md
-supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql  06_seasons.sql  07_season_stats.sql  08_students.sql
+supabase/01_schema.sql  02_rls.sql  03_functions.sql  04_seed.sql  05_media.sql  06_seasons.sql  07_season_stats.sql  08_students.sql  09_classes.sql
 src/
   main.tsx              # createRoot + BrowserRouter
   App.tsx               # 라우트 정의만
@@ -375,7 +404,8 @@ src/
   vite-env.d.ts         # ImportMetaEnv 타입 선언
   lib/
     supabase.ts         # createClient 싱글턴. env 누락 시 명확한 한국어 에러 throw
-    types.ts            # Problem, ProblemSummary, ProgressRow, SubmitResult, Student, StudentStats, ProblemStats
+    types.ts            # Problem, ProblemSummary, ProgressRow, SubmitResult, Student, SchoolClass, StudentStats, ProblemStats
+                        #  + GRADES (학년 드롭다운 목록. 여기만 고치면 선택지가 바뀐다)
     session.ts          # localStorage 키 "quiz.student" 에 {id, name} 저장. get/set/clear + useStudent 훅
     errors.ts           # Supabase PostgrestError → 사용자용 한국어 메시지 변환
     images.ts           # 문제 그림 업로드·삭제·공개 URL (Supabase Storage)
@@ -393,6 +423,7 @@ src/
     TeacherLogin.tsx        "/teacher/login"         signInWithPassword
     TeacherSeasons.tsx      "/teacher/seasons"       시즌 생성·이름수정·공개토글·삭제
     TeacherStudents.tsx     "/teacher/students"      학생 계정 생성(한 명/여러 명)·정보 수정·비밀번호 재설정·사용중지·삭제
+    TeacherClasses.tsx      "/teacher/classes"       반 생성·이름수정·순서변경·삭제. 학생 관리에서 링크로 간다
     TeacherProblems.tsx     "/teacher"               목록·공개토글·삭제. ?season= 로 시즌 필터
     TeacherProblemEdit.tsx  "/teacher/problems/:id"  :id === "new" 면 등록, 아니면 수정
     TeacherStats.tsx        "/teacher/stats"         시즌 요약 + 시즌 필터가 걸리는 문제별·학생별 표

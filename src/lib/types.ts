@@ -78,14 +78,31 @@ export type Student = {
   name: string;
   school: string;
   grade: string;
-  class_name: string;
+  /** classes 테이블 참조. 반이 정해지지 않았거나 그 반이 지워지면 null. */
+  class_id: string | null;
   is_active: boolean;
   created_at: string;
   last_seen_at: string;
 }
 
 /** 선생님 화면에서 students 를 조회할 때 쓰는 컬럼 목록. */
-export const STUDENT_COLUMNS = 'id, name, school, grade, class_name, is_active, created_at, last_seen_at';
+export const STUDENT_COLUMNS = 'id, name, school, grade, class_id, is_active, created_at, last_seen_at';
+
+/** classes 테이블 한 행. 선생님이 /teacher/classes 에서 만든다. */
+export type SchoolClass = {
+  id: string;
+  name: string;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * 학년 드롭다운 목록.
+ * DB 는 그냥 text 라 여기만 고치면 선택지가 늘어난다 (예: 중3 추가).
+ * 화면의 select 와 붙여넣기 추가의 검증이 둘 다 이 목록을 본다.
+ */
+export const GRADES = ['고1', '고2', '고3'] as const;
 
 /**
  * student_login RPC 결과.
@@ -110,6 +127,8 @@ export type StudentStats = {
   name: string;
   school: string;
   grade: string;
+  class_id: string | null;
+  /** classes.name 에서 끌어온 값. 반이 없으면 빈 문자열. */
   class_name: string;
   is_active: boolean;
   created_at: string;
@@ -151,6 +170,7 @@ export type StudentSeasonStats = {
   student_id: string;
   name: string;
   grade: string;
+  class_id: string | null;
   class_name: string;
   attempt_count: number;
   solved_count: number;
@@ -210,9 +230,15 @@ export interface Database {
           name?: string;
           school?: string;
           grade?: string;
-          class_name?: string;
+          class_id?: string | null;
           is_active?: boolean;
         };
+        Relationships: [];
+      };
+      classes: {
+        Row: SchoolClass;
+        Insert: { id?: string; name: string; order_index?: number };
+        Update: { name?: string; order_index?: number };
         Relationships: [];
       };
       submissions: {
@@ -251,7 +277,7 @@ export interface Database {
           p_name: string;
           p_school: string;
           p_grade: string;
-          p_class_name: string;
+          p_class_id: string | null;
           p_password: string;
         };
         Returns: string;
