@@ -39,7 +39,8 @@ export default function Layout({ children }: LayoutProps) {
             )}
           </Link>
 
-          <nav className="flex items-center gap-3 text-sm">
+          {/* 관리자 메뉴가 5개라 좁은 화면에서는 줄바꿈되게 둔다. 가로로 밀려 잘리는 것보다 낫다. */}
+          <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm">
             {isTeacherArea ? (
               <>
                 <Link to="/teacher" className="text-stone-600 hover:text-brand-700">
@@ -50,6 +51,9 @@ export default function Layout({ children }: LayoutProps) {
                 </Link>
                 <Link to="/teacher/students" className="text-stone-600 hover:text-brand-700">
                   학생 관리
+                </Link>
+                <Link to="/teacher/classes" className="text-stone-600 hover:text-brand-700">
+                  반 관리
                 </Link>
                 <Link to="/teacher/stats" className="text-stone-600 hover:text-brand-700">
                   통계

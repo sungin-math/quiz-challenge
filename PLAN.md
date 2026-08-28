@@ -423,7 +423,7 @@ src/
     TeacherLogin.tsx        "/teacher/login"         signInWithPassword
     TeacherSeasons.tsx      "/teacher/seasons"       시즌 생성·이름수정·공개토글·삭제
     TeacherStudents.tsx     "/teacher/students"      학생 계정 생성(한 명/여러 명)·정보 수정·비밀번호 재설정·사용중지·삭제
-    TeacherClasses.tsx      "/teacher/classes"       반 생성·이름수정·순서변경·삭제. 학생 관리에서 링크로 간다
+    TeacherClasses.tsx      "/teacher/classes"       반 생성·이름수정·순서변경·삭제
     TeacherProblems.tsx     "/teacher"               목록·공개토글·삭제. ?season= 로 시즌 필터
     TeacherProblemEdit.tsx  "/teacher/problems/:id"  :id === "new" 면 등록, 아니면 수정
     TeacherStats.tsx        "/teacher/stats"         시즌 요약 + 시즌 필터가 걸리는 문제별·학생별 표
